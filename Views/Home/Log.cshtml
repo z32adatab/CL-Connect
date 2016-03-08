@@ -1,0 +1,40 @@
+﻿@model List<CampusLogicEvents.Web.Models.Log>
+
+@{
+    ViewBag.Title = "Log Records";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .padtop {
+        padding-top: 20px;
+    }
+    td {
+        vertical-align:text-top;
+    }
+</style>
+
+<div id="body" class="padtop">
+    <section class="content-wrapper clear-fix">
+        <h3>Log Records:</h3>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Thread</th>
+                <th>Level</th>
+                <th>Logger</th>
+                <th>Message</th>
+            </tr>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td nowrap>@item.Date</td>
+                    <td>@item.Thread</td>
+                    <td>@item.Level</td>
+                    <td>@item.Logger</td>
+                    <td>@item.Message</td>
+                </tr>
+            }
+        </table>
+    </section>
+</div>
