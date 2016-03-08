@@ -1,0 +1,42 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security;
+using System.Web;
+using System.Web.Mvc;
+using CampusLogicEvents.Web.Models;
+
+namespace CampusLogicEvents.Web.Controllers
+{
+    public class HomeController : Controller
+    {
+        public ActionResult Index()
+        {
+            return View();
+        }
+
+        public ActionResult Log(int count = 100)
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            var logData = DataService.LogRecords(count);
+
+            return View(logData);
+        }
+
+        public ActionResult Events(int count = 100)
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            var eventData = DataService.EventRecords(count);
+
+            return View(eventData);
+        }
+    }
+}
