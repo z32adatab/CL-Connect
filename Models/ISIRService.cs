@@ -1,7 +1,9 @@
 ﻿using CampusLogicEvents.Implementation;
 using log4net;
 using System;
+using System.Configuration;
 using System.Linq;
+using CampusLogicEvents.Implementation.Configurations;
 using Hangfire;
 
 namespace CampusLogicEvents.Web.Models
@@ -9,6 +11,8 @@ namespace CampusLogicEvents.Web.Models
     public static class ISIRService
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
+        private static readonly CampusLogicSection campusLogicConfigSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
+
 
         /// <summary>
         /// Batches ISIR Corrections
@@ -19,8 +23,14 @@ namespace CampusLogicEvents.Web.Models
         {
             try
             {
+                //If today is not one of the configured days to run the job, then break
+                if (!campusLogicConfigSection.ISIRCorrectionsSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => DateTime.UtcNow.DayOfWeek.ToString().ToUpperInvariant().Contains(day.ToUpperInvariant().Trim())))
+                {
+                    return;
+                }
+
                 DocumentManager manager = new DocumentManager();
-                
+
                 //Batch todays ISIR Corretions
                 var result = manager.BatchISIRCorrections().Result;
 
@@ -28,7 +38,6 @@ namespace CampusLogicEvents.Web.Models
                 NotificationService.LogNotifications(result.NotificationDataList);
 
                 //result will be used for TD Client Processing
-
             }
             catch (Exception ex)
             {

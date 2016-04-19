@@ -23,6 +23,12 @@ namespace CampusLogicEvents.Web.Models
         [AutomaticRetry(Attempts = 0)]
         public static void Upload(UploadSettings uploadSettings)
         {
+            //If today is not one of the configured days to run the job, then break
+            if (!uploadSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => DateTime.UtcNow.DayOfWeek.ToString().ToUpperInvariant().Contains(day.ToUpperInvariant().Trim())))
+            {
+                return;
+            }
+
             NotificationManager notificationManager = new NotificationManager();
 
             try
