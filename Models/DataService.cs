@@ -148,7 +148,7 @@ namespace CampusLogicEvents.Web.Models
             {
                 ParameterName = "TransactionCategoryId",
                 OdbcType = OdbcType.Int,
-                Value = eventData.SvTransactionCategoryId
+                Value = eventData.SvTransactionCategoryId ?? 0
             });
 
             parameters.Add(new OdbcParameter()
