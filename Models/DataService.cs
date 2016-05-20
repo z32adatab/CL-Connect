@@ -86,6 +86,16 @@ namespace CampusLogicEvents.Web.Models
                         {
                             DocumentRetrievalHandler(eventData);
                         }
+                        else if (eventHandler.HandleMethod == "DocumentRetrievalAndStoredProc")
+                        {
+                            DocumentRetrievalHandler(eventData);
+                            DatabaseStoredProcedure(eventData, eventHandler.DbCommandFieldValue);
+                        }
+                        else if (eventHandler.HandleMethod == "DocumentRetrievalAndNonQuery")
+                        {
+                            DocumentRetrievalHandler(eventData);
+                            DatabaseCommandNonQueryHandler(eventData, eventHandler.DbCommandFieldValue);
+                        }
                     } 
                     
                     //Update the received event with a processed date time
