@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net.Configuration;
 using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
 
@@ -25,10 +26,15 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="errorMessage"></param>
         public static void ErrorNotification(string operation, string errorMessage)
         {
-            if (campusLogicSection.SMTPSettings.NotificationsEnabled)
+            if (campusLogicSection.SMTPSettings.NotificationsEnabled ?? false)
             {
                 DataService.LogNotification(notificationManager.SendErrorNotification(operation, errorMessage).Result);
             }
+        }
+
+        public static void ErrorNotification(SmtpSection smtpSection, string sendTo)
+        {
+            DataService.LogNotification(notificationManager.TestSMTP(smtpSection, sendTo));
         }
 
         /// <summary>
@@ -38,7 +44,7 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="exception"></param>
         public static void ErrorNotification(string operation, Exception exception)
         {
-            if (campusLogicSection.SMTPSettings.NotificationsEnabled)
+            if (campusLogicSection.SMTPSettings.NotificationsEnabled ?? false)
             {
                 DataService.LogNotification(notificationManager.SendErrorNotification(operation, exception).Result);
             }

@@ -1,0 +1,68 @@
+﻿@{
+    Layout = "~/Views/Shared/_LeftMenuLayout.cshtml";
+}
+
+<form name="environmentForm">
+    <h2><b>Initial Setup</b></h2>
+    <p>
+        For further information on the CL Connect wizard please see this<a href="https://campuslogicinc.freshdesk.com/support/solutions/articles/5000706493-get-started" target="_blank">overview</a>.
+    </p>
+    <hr>
+    <div class="col-md-12 padding-top-ten">
+        <div class="col-md-6">
+            <h4>
+                <span class="form-required" aria-hidden="true">*</span>
+                <b> What environment would you like to set up?</b>
+            </h4>
+            <div class="col-md-10">
+                <select id="environmentdropdown" name="environmentdropdown" kendo-drop-down-list required class="form-control input-lg height-100" k-on-change="environmentDropDownChangeEvent(kendoEvent)" ng-model="service.configurationModel.appSettingsSection.environment">
+                    <option value="">Select one..</option>
+                    <option value="sandbox">Sandbox</option>
+                    <option value="production">Production</option>
+                </select>
+            </div>
+            <div class="col-md-10">
+                <span class="field-validation-error" ng-show="(environmentForm.environmentdropdown.$dirty && environmentForm.environmentdropdown.$error.required) || !validationService.pageValidations.environmentValid">Required</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h4>
+                <span class="form-required" aria-hidden="true">*</span>
+                <b>What configurations would you like to enable?</b>
+            </h4>
+            <div class="col-md-12">
+                <div class="padding-five">
+                    <input type="checkbox" id="smtp" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.smtpSettings.notificationsEnabled, 'smtpValid');" ng-model="service.configurationModel.campusLogicSection.smtpSettings.notificationsEnabled">
+                    <label class="k-checkbox-label" for="smtp" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables emails to be sent for automation errors">SMTP</label>
+                </div>
+                <div class="padding-five">
+                    <input type="checkbox" id="isirUpload" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled, 'isirUploadValid');" ng-model="service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled">
+                    <label class="k-checkbox-label" for="isirUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates ISIR upload">ISIR Uploads</label>
+                </div>
+                <div class="padding-five">
+                    <input type="checkbox" id="awardLetterUpload" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled, 'awardLetterUploadValid');" ng-model="service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled">
+                    <label class="k-checkbox-label" for="awardLetterUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter data file upload">AwardLetter Uploads</label>
+                </div>
+                <div class="padding-five">
+                    <input type="checkbox" id="isirBatchCorrections" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled, 'isirCorrectionsValid');" ng-model="service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled">
+                    <label class="k-checkbox-label" for="isirBatchCorrections" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates ISIR Batch Corrections">ISIR Batch Corrections</label>
+                </div>
+                <div class="padding-five">
+                    <input type="checkbox" id="eventNotifications" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.eventNotificationsEnabled, 'eventNotificationsValid'); setDocumentSettings();" ng-model="service.configurationModel.campusLogicSection.eventNotificationsEnabled">
+                    <label class="k-checkbox-label" for="eventNotifications" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables notifications and processing of events(task completed, document submitted etc.)">Event Notifications</label>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="documentImaging" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.documentSettings.documentsEnabled, 'documentSettingsValid');" ng-model="service.configurationModel.campusLogicSection.documentSettings.documentsEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled">
+                        <label class="k-checkbox-label" for="documentImaging" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables document specific notifications and processing">Documents</label>
+                    </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="storedProcedure" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.storedProceduresEnabled, 'storedProcedureValid');" ng-model="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <label class="k-checkbox-label" for="storedProcedure" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables configurable procedure">Stored Procedure</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+

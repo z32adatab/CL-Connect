@@ -10,8 +10,8 @@ namespace CampusLogicEvents.Web.Filters
     {
         protected override async Task<IPrincipal> AuthenticateAsync(string userName, string password, CancellationToken cancellationToken)
         {
-            if (!(userName == ConfigurationManager.AppSettings["IncomingAPIUsername"] &&
-                  password == ConfigurationManager.AppSettings["IncomingAPIPassword"]))
+            if (!(userName == ConfigurationManager.AppSettings["IncomingApiUsername"] &&
+                  password == ConfigurationManager.AppSettings["IncomingApiPassword"]))
             {
                 return null;
             }

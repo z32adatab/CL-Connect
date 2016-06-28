@@ -1,0 +1,56 @@
+﻿@{
+    Layout = "~/Views/Shared/_LeftMenuLayout.cshtml";
+}
+
+<form class="form-horizontal" data-toggle="validator" name="isircorrectionForm" novalidate>
+    <h2>
+        <b>ISIR Batch Corrections</b>
+    </h2>
+    <section>
+        <p>
+            This step will allow you to select the configurations for the ISIR Batch Corrections process.
+            If the file path you wish to use is not available for selection, you may also enter the path below.
+            For assistance in giving appropriate file path permissions, please click <a href="https://campuslogicinc.freshdesk.com/support/solutions/articles/5000701741" target="_blank">File Path Permissions.</a>
+            For further detail on the ISIR Batch Corrections section please click <a href="https://campuslogicinc.freshdesk.com/support/solutions/articles/5000706492-isir-corrections" target="_blank">ISIR Batch Corrections Detail.</a>
+    </section>
+    <hr>
+    <div class="col-md-12 padding-top-ten">
+        <div class="col-md-5">
+            <div class="form-group">
+                <label class="col-md-5 control-label"><span class="form-required" aria-hidden="true">* </span>Days to Run</label>
+                <div class="col-md-7">
+                    <select name="daysToRun" kendo-multi-select k-options="vm.daysToRunOptions" k-ng-model="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun"></select>
+                    <span class="field-validation-error" ng-show="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length <= 0">Required</span>
+                </div>
+            </div>
+            <div class="form-group padding-top-twenty">
+                <label class="col-md-5 control-label"><span class="form-required" aria-hidden="true">* </span>Time to Run</label>
+                <div class="col-md-3">
+                    <input required name="timeToRun" kendo-time-picker style="height: 29px" ng-model="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.timeToRun">
+                    <span class="field-validation-error" ng-show="isircorrectionForm.timeToRun.$dirty && isircorrectionForm.timeToRun.$error.required">Required</span>
+                </div>
+            </div>
+            <div class="form-group padding-top-twenty">
+                <label class="col-md-5 control-label"><span class="form-required" aria-hidden="true">* </span>File Extension</label>
+                <div class="col-md-3">
+                    <select kendo-drop-down-list name="fileExtension" style="height: 34px" ng-model="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.fileExtension">
+                        <option style="height: 34px" value="txt">txt</option>
+                        <option style="height: 34px" value="dat">dat</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="form-group">
+                <label class="col-md-3 control-label"><span class="form-required" aria-hidden="true">*</span>Corrections File Path</label>
+                <cl-folder-picker isrequired="true" formvalid="vm.validationService.pageValidations.isirCorrectionsValid" uploadpath="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath"></cl-folder-picker>
+            </div>
+            <div class="form-group">
+                <label class="col-md-3 control-label">File Name</label>
+                <div class="col-md-5">
+                    <input name="fileName" type="text" ng-model="vm.service.configurationModel.campusLogicSection.isirCorrectionsSettings.fileName" class="form-control">
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

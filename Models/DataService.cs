@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Data.Odbc;
 using System.Linq;
-using System.Net.Mail;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
 using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
 using CampusLogicEvents.Web.Areas.HelpPage.ModelDescriptions;
 using Hangfire;
 using log4net;
-using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json.Linq;
 
 namespace CampusLogicEvents.Web.Models
@@ -24,35 +17,99 @@ namespace CampusLogicEvents.Web.Models
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
         private static readonly CampusLogicSection campusLogicConfigSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
-        
+
         /// <summary>
         /// Process the Notification Events by storing each event received and then queue them each for processing
         /// </summary>
         /// <param name="eventData"></param>
         public static void ReceivePostedEvents(IEnumerable<JObject> eventData)
         {
-            using (var dbContext = new CampusLogicContext())
+            if (campusLogicConfigSection.EventNotifications.EventNotificationsEnabled ?? false)
             {
-                foreach (JObject notificationEvent in eventData)
+                using (var dbContext = new CampusLogicContext())
                 {
-                    //First verify we didn't already get and process this event using the unique identifier within the configured purge day window before we clear old events
-                    var id = notificationEvent["Id"].ToString();
-                    var eventExists = dbContext.ReceivedEvents.Any(x => x.Id == id && x.ProcessedDateTime != null);
-
-                    if (!eventExists)
+                    foreach (JObject notificationEvent in eventData)
                     {
-                        dbContext.ReceivedEvents.Add(new ReceivedEvent()
-                        {
-                            Id = notificationEvent["Id"].ToString(),
-                            EventData = notificationEvent.ToString(),
-                            ReceivedDateTime = DateTime.UtcNow
-                        });
-                        dbContext.SaveChanges();
+                        //First verify we didn't already get and process this event using the unique identifier within the configured purge day window before we clear old events
+                        var id = notificationEvent["Id"].ToString();
+                        var eventExists = dbContext.ReceivedEvents.Any(x => x.Id == id && x.ProcessedDateTime != null);
 
-                        BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
+                        if (!eventExists)
+                        {
+                            dbContext.ReceivedEvents.Add(new ReceivedEvent()
+                            {
+                                Id = notificationEvent["Id"].ToString(),
+                                EventData = notificationEvent.ToString(),
+                                ReceivedDateTime = DateTime.UtcNow
+                            });
+                            dbContext.SaveChanges();
+
+                            BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
+                        }
                     }
                 }
             }
+        }
+
+        public static void GetDefaultDatabaseProcedure(EventNotificationData eventData, string storedProcedureName)
+        {
+            var parameters = new List<OdbcParameter>();
+
+            //Define parameters
+            parameters.Add(new OdbcParameter
+            {
+                ParameterName = "StudentId",
+                OdbcType = OdbcType.VarChar,
+                Size = 9,
+                Value = eventData.StudentId
+            });
+
+            parameters.Add(new OdbcParameter
+            {
+                ParameterName = "AwardYear",
+                OdbcType = OdbcType.VarChar,
+                Size = 4,
+                Value = String.IsNullOrWhiteSpace(eventData.AwardYear) ? string.Empty : (eventData.AwardYear.Substring(2, 2) + eventData.AwardYear.Substring(7, 2))
+            });
+
+            parameters.Add(new OdbcParameter
+            {
+                ParameterName = "TransactionCategoryId",
+                OdbcType = OdbcType.Int,
+                Value = eventData.SvTransactionCategoryId ?? 0
+            });
+
+            parameters.Add(new OdbcParameter
+            {
+                ParameterName = "EventNotificationId",
+                OdbcType = OdbcType.Int,
+                Value = eventData.EventNotificationId
+            });
+
+            if (eventData.SvDocumentId > 0)
+            {
+                var manager = new DocumentManager();
+                DocumentMetaData metaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+
+                parameters.Add(new OdbcParameter
+                {
+                    ParameterName = "DocumentName",
+                    OdbcType = OdbcType.VarChar,
+                    Size = 128,
+                    Value = metaData != null ? metaData.DocumentName : string.Empty
+                });
+            }
+            else
+            {
+                parameters.Add(new OdbcParameter
+                {
+                    ParameterName = "DocumentName",
+                    OdbcType = OdbcType.VarChar,
+                    Size = 128,
+                    Value = string.Empty
+                });
+            }
+            ClientDatabaseManager.ExecuteDatabaseStoredProcedure("{CALL " + storedProcedureName + " (?, ?, ?, ?, ?)}", parameters);
         }
 
         /// <summary>
@@ -68,9 +125,40 @@ namespace CampusLogicEvents.Web.Models
                 {
                     var eventData = notificationEvent.ToObject<EventNotificationData>();
 
-                    var eventHandler = campusLogicConfigSection.EventNotifications.FirstOrDefault(x => x.EventNotificationId == eventData.EventNotificationId) ??
-                                       campusLogicConfigSection.EventNotifications.FirstOrDefault(x => x.EventNotificationId == 0); //If no specific handler was provided check for the catch all handler
+                    var eventHandler = campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == eventData.EventNotificationId) ??
+                                       campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == 0); //If no specific handler was provided check for the catch all handler
 
+                    //Check if the transaction category was one of the three appeal types
+                    if (eventData.SvTransactionCategoryId != null)
+                    {
+                        if (((TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.SapAppeal
+                            || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjDependencyOverrideAppeal
+                            || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjEfcAppeal) && eventData.EventNotificationName == "Transaction Completed")
+                        {
+                            if (eventData.SvTransactionId == null)
+                            {
+                                throw new Exception("A transaction Id is needed to get the appeal meta data");
+                            }
+                            var manager = new AppealManager();
+                            manager.GetAuthorizationForSV();
+                            eventData.TransactionOutcomeId = manager.GetAppealMetaData((int)eventData.SvTransactionId).Result;
+                        }
+                    }
+                    //check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
+                    if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
+                    {
+                        if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
+                        {
+                            throw new Exception("An AdditionalInfoId is needed to get the communication event meta data");
+                        }
+                        var manager = new CommunicationManager();
+                        manager.GetAuthorizationForSV();
+                        CommunicationActivityMetadata communicationActivityMetadata = manager.GetCommunicationActivityMetaData((int)eventData.AdditionalInfoId).Result;
+                        eventData.CommunicationBody = communicationActivityMetadata.Body;
+                        eventData.CommunicationTypeId = communicationActivityMetadata.CommunicationTypeId;
+                        eventData.CommunicationType = communicationActivityMetadata.CommunicationType;
+                        eventData.CommunicationAddress = communicationActivityMetadata.CommunicationAddress;
+                    }
                     if (eventHandler != null)
                     {
                         //Send it to the correct handler
@@ -96,8 +184,8 @@ namespace CampusLogicEvents.Web.Models
                             DocumentRetrievalHandler(eventData);
                             DatabaseCommandNonQueryHandler(eventData, eventHandler.DbCommandFieldValue);
                         }
-                    } 
-                    
+                    }
+
                     //Update the received event with a processed date time
                     var storedEvent = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == eventData.Id);
                     if (storedEvent != null)
@@ -128,72 +216,75 @@ namespace CampusLogicEvents.Web.Models
         }
 
         /// <summary>
-        /// Handles events that require the system to execute a database stored procedure
-        /// TODO: Currently this is setup with a default stored procedure, may want to expand the config so they can define parameters there
+        /// Handles events that require the system to execute a database stored procedure based on the configuration.
         /// </summary>
         /// <param name="eventData"></param>
         /// <param name="storedProcedureName"></param>
         private static void DatabaseStoredProcedure(EventNotificationData eventData, string storedProcedureName)
         {
-            var parameters = new List<OdbcParameter>();
+            var storedProcedureSettings = campusLogicConfigSection.StoredProcedures.GetStoredProcedure(storedProcedureName);
 
-            //Define parameters
-            parameters.Add(new OdbcParameter()
+            if (storedProcedureSettings != null)
             {
-                ParameterName = "StudentId",
-                OdbcType = OdbcType.VarChar,
-                Size = 9,
-                Value = eventData.StudentId
-            });
+                // Parse parameters based on config.
+                EventPropertyValues eventPropertyValues = new EventPropertyValues(null, null, eventData);
+                List<OdbcParameter> parameters =
+                    storedProcedureSettings.GetParameters().Select(p => ParseParameter(p, eventPropertyValues)).ToList();
 
-            parameters.Add(new OdbcParameter()
-            {
-                ParameterName = "AwardYear",
-                OdbcType = OdbcType.VarChar,
-                Size = 4,
-                Value = String.IsNullOrWhiteSpace(eventData.AwardYear) ? string.Empty : (eventData.AwardYear.Substring(2, 2) + eventData.AwardYear.Substring(7, 2))
-            });
-
-            parameters.Add(new OdbcParameter()
-            {
-                ParameterName = "TransactionCategoryId",
-                OdbcType = OdbcType.Int,
-                Value = eventData.SvTransactionCategoryId ?? 0
-            });
-
-            parameters.Add(new OdbcParameter()
-            {
-                ParameterName = "EventNotificationId",
-                OdbcType = OdbcType.Int,
-                Value = eventData.EventNotificationId
-            });
-
-            if (eventData.SvDocumentId > 0)
-            {
-                var manager = new DocumentManager();
-                DocumentMetaData metaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
-
-                parameters.Add(new OdbcParameter()
+                // For each parameter, need to add a placeholder "?" in the sql command.  
+                // This is just part of the ODBC syntax.
+                string placeholders = string.Join(",", parameters.Select(p => "?").ToArray());
+                if (placeholders.Length > 0)
                 {
-                    ParameterName = "DocumentName",
-                    OdbcType = OdbcType.VarChar,
-                    Size = 128,
-                    Value = metaData != null ? metaData.DocumentName : string.Empty
-                });
+                    placeholders = " (" + placeholders + ")";
+                }
+
+                // Final output should look like this: {CALL sproc_name (?, ?, ?)}
+                string command = string.Format("{{CALL {0}{1}}}", storedProcedureSettings.Name, placeholders);
+
+                ClientDatabaseManager.ExecuteDatabaseStoredProcedure(command, parameters);
             }
             else
             {
-                parameters.Add(new OdbcParameter()
-                {
-                    ParameterName = "DocumentName",
-                    OdbcType = OdbcType.VarChar,
-                    Size = 128,
-                    Value = string.Empty
-                });
+                //Static db procedure
+                GetDefaultDatabaseProcedure(eventData, storedProcedureName);
             }
-            
-            ClientDatabaseManager.ExecuteDatabaseStoredProcedure("{CALL " + storedProcedureName + " (?, ?, ?, ?, ?)}", parameters);
+        }
 
+        /// <summary>
+        /// Builds an Odbc Parameter object from the arguments.
+        /// </summary>
+        /// <param name="parameterElement">Parameter definition from the config.</param>
+        /// <param name="data">The event notification to pull the parameter's value from.</param>
+        /// <returns></returns>
+        private static OdbcParameter ParseParameter(ParameterElement parameterElement, EventPropertyValues data)
+        {
+            try
+            {
+                // Need to convert the string representation of the type to the actual
+                // enum OdbcType.
+                string[] odbcTypes = Enum.GetNames(typeof(OdbcType));
+                string odbcTypeMatch = odbcTypes.First(t => t.Equals(parameterElement.DataType, StringComparison.InvariantCultureIgnoreCase));
+                OdbcType odbcType = (OdbcType)Enum.Parse(typeof(OdbcType), odbcTypeMatch);
+
+                // Get property from the data using a string.
+                object value = data.GetType().GetProperty(parameterElement.Source).GetValue(data);
+
+                // Build return object.
+                var parameter = new OdbcParameter
+                {
+                    ParameterName = parameterElement.Name,
+                    OdbcType = odbcType,
+                    Size = parameterElement.LengthAsInt,
+                    Value = value ?? DBNull.Value
+                };
+
+                return parameter;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to parse parameter.", ex);
+            }
         }
 
         /// <summary>
@@ -218,7 +309,7 @@ namespace CampusLogicEvents.Web.Models
             var dataFiles = manager.GetDocumentFiles(eventData.SvDocumentId.Value, eventData);
 
             //If required create an index file
-            if (dataFiles.Any() && campusLogicConfigSection.DocumentSettings.IndexFileEnabled)
+            if (dataFiles.Any() && (campusLogicConfigSection.DocumentSettings.IndexFileEnabled ?? false))
             {
                 manager.CreateDocumentsIndexFile(dataFiles, eventData, metaData);
             }
@@ -235,7 +326,7 @@ namespace CampusLogicEvents.Web.Models
                 var purgeReceivedEventsAfterDays = String.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["PurgeReceivedEventsAfterDays"]) ? 30 : Convert.ToInt32(ConfigurationManager.AppSettings["PurgeReceivedEventsAfterDays"]);
                 var purgeLogRecordsAfterDays = String.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["PurgeLogRecordsAfterDays"]) ? 30 : Convert.ToInt32(ConfigurationManager.AppSettings["PurgeLogRecordsAfterDays"]);
                 var purgeNotificaitonLogRecordsAfterDays = String.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["PurgeNotificationLogRecordsAfterDays"]) ? 30 : Convert.ToInt32(ConfigurationManager.AppSettings["PurgeNotificationLogRecordsAfterDays"]);
-                
+
                 using (var dbContext = new CampusLogicContext())
                 {
                     //Clean up log records older then configured number of days
@@ -252,7 +343,7 @@ namespace CampusLogicEvents.Web.Models
             {
                 logger.ErrorFormat("DataService DataCleanup Error: {0}", ex);
             }
-            
+
         }
 
         /// <summary>
@@ -287,7 +378,7 @@ namespace CampusLogicEvents.Web.Models
         {
             try
             {
-                if (campusLogicConfigSection.SMTPSettings.NotificationsEnabled)
+                if (campusLogicConfigSection.SMTPSettings.NotificationsEnabled ?? false)
                 {
                     using (var dbContext = new CampusLogicContext())
                     {

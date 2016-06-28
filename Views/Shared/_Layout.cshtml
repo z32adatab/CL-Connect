@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width" />
     <title>@ViewBag.Title</title>
     @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/kendo/2014.3.1316/css")
+    @Styles.Render("~/Content/toastr")
     @Scripts.Render("~/bundles/modernizr")
+ 
+
 </head>
 <body>
     <header>
         <div class="content-wrapper">
             <div class="float-left">
                 <p class="site-title">
-                    <a href="~/">CampusLogic Events</a></p>
+                    <a href="~/">CL Connect</a></p>
             </div>
             <div class="float-right">
                 <nav>
@@ -25,8 +29,10 @@
         </div>
     </header>
     @RenderBody()
-
-    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/Content/js")
+    @Scripts.Render("~/Content/angular")
+    @Scripts.Render("~/bundles/clConnect.main.js")
+    @Scripts.Render("~/bundles/clConnect.setup.js")
     @RenderSection("scripts", required: false)
 </body>
 </html>

@@ -1,0 +1,146 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+
+</head>
+<body>
+    <div ng-controller="stepcontroller">
+        <hr>
+        <div class="container full-width col-md-offset-1" id="myWizard">
+            <div class="row">
+                <div class="col-md-2 text-center col-sm-5 col-xs-12 setup-wizard-title-padding">
+                    <h2>
+                        <b> Setup Wizard</b>
+                    </h2>
+                </div>
+                <div class="col-md-5 col-sm-6 col-xs-12">
+                    <h3>
+                        <b class="important-color" ng-if="service.configurationModel.appSettingsSection.environment != 'initial'"> Current Environment: {{service.configurationModel.appSettingsSection.environment | capitalize}}</b>
+                    </h3>
+                </div>
+                <div class="col-md-2 col-sm-2 col-xs-12 padding-top-twenty">
+                    <h4>
+                        <b class="form-required">* = Required</b>
+                    </h4>
+                </div>
+            </div>
+            <div class="col-md-2 no-gutter">
+                <div class="col-md-10 no-gutter">
+                    <div class="navbar">
+                        <div class="navbar-inner left-hand-menu">
+                            <ul id="stepList" class="nav nav-pills nav-stacked">
+                                <li ng-class="getActiveStep('/environment')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/environment" ng-click="validateStep();">
+                                        Initial Setup <i ng-if="!validationService.pageValidations.environmentValid" class="fa fa-exclamation-triangle  icon-fixed-width  important-color padding-top-five pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-class="getActiveStep('/credentials')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/credentials" ng-click="validateStep();">
+                                        API Credentials <i ng-if="!validationService.pageValidations.apiCredentialsValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-class="getActiveStep('/appSettings')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/appSettings" ng-click="validateStep();">
+                                        Application Settings <i ng-if="!validationService.pageValidations.applicationSettingsValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.smtpSettings.notificationsEnabled" ng-class="getActiveStep('/smtp')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/smtp" ng-click="validateStep(); ">
+                                        SMTP <i ng-if="!validationService.pageValidations.smtpValid" class="fa fa-exclamation-triangle padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled" ng-class="getActiveStep('/isirUpload')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/isirUpload" ng-click="validateStep();">
+                                        ISIR Upload <i ng-if="!validationService.pageValidations.isirUploadValid" class="fa fa-exclamation-triangle padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled" ng-class="getActiveStep('/awardLetterUpload')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/awardLetterUpload" ng-click="validateStep();">
+                                        AwardLetter Upload <i ng-if="!validationService.pageValidations.awardLetterUploadValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled" ng-class="getActiveStep('/isircorrections')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/isircorrections" ng-click="validateStep();">
+                                        ISIR Corrections <i ng-if="!validationService.pageValidations.isirCorrectionsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.eventNotificationsEnabled" ng-class="getActiveStep('/eventnotifications')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/eventnotifications" ng-click="validateStep();">
+                                        Event Notifications <i ng-if="!validationService.pageValidations.eventNotificationsValid || !validationService.pageValidations.connectionStringValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.documentSettings.documentsEnabled" ng-class="getActiveStep('/document')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/document" ng-click="validateStep();">
+                                        Documents <i ng-if="validationService.pageValidations.documentSettingsValid == false" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-class="getActiveStep('/storedprocedure')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/storedprocedure" ng-click="validateStep();">
+                                        Stored Procedure<i ng-if="!validationService.pageValidations.storedProcedureValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-class="getActiveStep('/saveConfigurations')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/saveConfigurations" ng-click="validationService.validateAllSteps();">Save Configurations</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="tab-content row">
+                    <div class="tab-pane fade in active" id="step">
+                        <div class="well col-md-12 wizard-tab-container">
+                            @RenderBody()
+                            <div ng-if="activeStep !== '/saveConfigurations'" class="pull-right padding-top-twenty">
+                                <a class="btn btn-default btn-lg next" ng-click="validateStep(); goNext();">Continue</a>
+                            </div>
+                            <div ng-if="activeStep === '/saveConfigurations'" class="pull-right padding-top-twenty">
+                                <a class="btn btn-default btn-lg next" ng-disabled="invalidPages().length > 0 || disableSave" ng-click="saveConfigurations();">Save</a>
+                            </div>
+                        </div>
+                        <div class="col-md-12" ng-if="invalidPages().length > 0 && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>Please review the sections that have errors, and resolve those issues. </b> <br>
+                                <b>Your configurations cannot be saved until those issues are resolved. </b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="duplicatePath && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>One of your file upload paths has been used twice. </b> <br>
+                                <b>Please ensure all file upload paths are unique. </b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="duplicateEvent && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>You have the same event notification listed twice. </b> <br>
+                                <b>Please ensure only one response has been detailed per event. </b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="errorCopying && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>There was an error copying the old Web.config, please check ur folder permissions and try again. </b> <br>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="success && activeStep === '/saveConfigurations'">
+                            <p class="success-color">
+                                <b>Your configurations were successfully saved, please go back to the home page </b> <br>
+                                <b> to ensure your changes have been applied </b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="fail && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>There was an error while saving your web.config, please try again </b> <br>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -15,6 +15,11 @@ namespace CampusLogicEvents.Web.Controllers
             return View();
         }
 
+        public ActionResult Menu()
+        {
+            return PartialView();
+        }
+
         public ActionResult Log(int count = 100)
         {
             if (!Request.IsLocal)
