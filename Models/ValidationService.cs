@@ -50,7 +50,7 @@ namespace CampusLogicEvents.Web.Models
                 }
                 if (configurationModel.CampusLogicSection.ISIRCorrectionsSettings.CorrectionsEnabled ?? false)
                 {
-                    response.ISIRCorrectionsValid = ValidateIsirCorrectionSettings(configurationModel.CampusLogicSection.ISIRCorrectionsSettings).IsSuccessStatusCode;
+                    response.ISIRCorrectionsValid = ValidateIsirCorrectionSettings(configurationModel.CampusLogicSection.ISIRCorrectionsSettings.CorrectionsFilePath).IsSuccessStatusCode;
                 }
                 if (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
                 {
@@ -304,26 +304,13 @@ namespace CampusLogicEvents.Web.Models
         /// </summary>
         /// <param name="directoryPath"></param>
         /// <returns></returns>
-        public static HttpResponseMessage ValidateIsirCorrectionSettings(ISIRCorrectionsSettings isirCorrectionsSettings)
+        public static HttpResponseMessage ValidateIsirCorrectionSettings(string directoryPath)
         {
             try
             {
                 DocumentManager documentManager = new DocumentManager();
-                if (documentManager.ValidateDirectory(isirCorrectionsSettings.CorrectionsFilePath))
+                if (documentManager.ValidateDirectory(directoryPath))
                 {
-                    if (isirCorrectionsSettings.TdClientEnabled.HasValue && isirCorrectionsSettings.TdClientEnabled.Value == true)
-                    {
-                        if (documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientExecutablePath) &&
-                            documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientArchiveFilePath) &&
-                            documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientSecfileFolderPath))
-                        {
-                            return new HttpResponseMessage(HttpStatusCode.OK);
-                        }
-                        else
-                        {
-                            return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
-                        }
-                    }
                     return new HttpResponseMessage(HttpStatusCode.OK);
                 }
                 else
