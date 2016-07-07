@@ -4,7 +4,7 @@
             <input id="folderPath" class="input-lg col-md-12" name="folderPath" ng-model="uploadpath" ng-required="isrequired" ng-blur="validateFolderPathUnique()"/>
             <div class="pull-right">
                 <span class="field-validation-error" ng-show="(folderPickerForm.folderPath.$dirty && folderPickerForm.folderPath.$error.required) ||(!formvalid && (uploadpath === '' || !uploadpath))">Required</span>
-                <span class="field-validation-error" ng-hide="folderPathUnique">Folder path must differ between ISIR Upload, Award Letter Upload, ISIR Batch Corrections, and Document.</span>
+                <span class="field-validation-error" ng-hide="folderPathUnique">Folder path must differ between ISIR Upload, Award Letter Upload, ISIR Batch Corrections, TDClient Archive and Document.</span>
             </div>
                 <div class="padding-top-twenty pull-left">
                 <button class="btn btn-default btn-lg" type="submit" name="testButton" ng-click="testReadWritePermissions()">Test</button>

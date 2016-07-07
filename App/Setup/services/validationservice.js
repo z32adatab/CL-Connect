@@ -69,6 +69,7 @@
             filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.tdClientArchiveFilePath);
             if (uploadpath) {
                 var matches = $.grep(filePathValues, function (filePath) {
                     return uploadpath === filePath;
@@ -206,10 +207,10 @@
                 if (service.pageValidations.isirUploadValid) {
                     service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath }
                         , function (response) {
-                            service.pageValidations.isirUploadValid = true;
-                        }, function (error) {
-                            service.pageValidations.isirUploadValid = false;
-                        });
+                        service.pageValidations.isirUploadValid = true;
+                    }, function (error) {
+                        service.pageValidations.isirUploadValid = false;
+                    });
                 }
             }
             else {
@@ -244,18 +245,41 @@
         }
 
         function testIsirCorrections() {
-            if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length > 0
-              && service.testFolderPath(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath)) {
+            service.pageValidations.isirCorrectionsValid = true;
 
+            if ($rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath) === false
+                && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.timeToRun) === false
+                && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length > 0)
+            {
                 service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath }
                    , function (response) {
-                       service.pageValidations.isirCorrectionsValid = true;
+                       //service.pageValidations.isirCorrectionsValid = true;
                    }, function (error) {
                        service.pageValidations.isirCorrectionsValid = false;
                    });
             }
             else {
                 service.pageValidations.isirCorrectionsValid = false;
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientEnabled === true) {
+                if ($rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientExecutablePath) === false
+                    && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath) === false
+                    && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientSecfileFolderPath) === false
+                    && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientFtpUserId) === false
+                    && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientFtpUsername) === false
+                    && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath !== setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath) {
+                        service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientExecutablePath }, function(response) {
+                            service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath }, function(response) {
+                                service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientSecfileFolderPath }, function(response) {
+                                    //we are good
+                                }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
+                            }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
+                        }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
+                }
+                else {
+                    service.pageValidations.isirCorrectionsValid = false;
+                }
             }
         }
 
@@ -271,24 +295,24 @@
 
         function testEventNotifications(form) {
             if (!service.checkForDuplicateEvent()) {
-                service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
+            service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
                 service.pageValidations.connectionStringValid = true;
                 if ((!form && !service.pageValidations.eventNotificationsConnectionTested) || form.$valid) {
-                    service.pageValidations.eventNotificationsConnectionTested = false;
-                    if (setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString && setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString.length > 0) {
-                        service.testConnectionString.get(
-                            {
-                                connectionString: setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString
-                            },
-                            function () {
-                                service.pageValidations.connectionStringValid = true;
-                                service.pageValidations.eventNotificationsConnectionTested = true;
-                            },
-                            function () {
-                                service.pageValidations.eventNotificationsConnectionTested = true;
-                                service.pageValidations.connectionStringValid = false;
-                            });
-                    }
+                service.pageValidations.eventNotificationsConnectionTested = false;
+                if (setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString && setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString.length > 0) {
+                    service.testConnectionString.get(
+                        {
+                            connectionString: setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString
+                        },
+                        function () {
+                            service.pageValidations.connectionStringValid = true;
+                            service.pageValidations.eventNotificationsConnectionTested = true;
+                        },
+                        function () {
+                            service.pageValidations.eventNotificationsConnectionTested = true;
+                            service.pageValidations.connectionStringValid = false;
+                        });
+                }
                 }
             } else {
                 service.pageValidations.eventNotificationsValid = false;
@@ -366,8 +390,8 @@
                         });
                 }
             }
-            catch
-            (exception) {
+            catch 
+                (exception) {
                 toastr.error("An error occured while attempting to connect to SMTP.");
             }
         }
@@ -407,10 +431,10 @@
                         if (service.testFolderPath(settings.documentStorageFilePath)) {
 
                             service.testReadWritePermissions.get({ directoryPath: settings.documentStorageFilePath }, function (response) {
-                                service.pageValidations.documentSettingsValid = true;
-                            }, function (error) {
-                                service.pageValidations.documentSettingsValid = false;
-                            });
+                             service.pageValidations.documentSettingsValid = true;
+                         }, function (error) {
+                             service.pageValidations.documentSettingsValid = false;
+                         });
                         } else {
                             service.pageValidations.documentSettingsValid = false;
                         }
