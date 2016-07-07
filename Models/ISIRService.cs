@@ -32,12 +32,18 @@ namespace CampusLogicEvents.Web.Models
                 DocumentManager manager = new DocumentManager();
 
                 //Batch todays ISIR Corretions
-                var result = manager.BatchISIRCorrections().Result;
+                var batchResult = manager.BatchISIRCorrections().Result;
 
                 //Log all(if any) of the error emails sent during the Automated ISIR Batch process
-                NotificationService.LogNotifications(result.NotificationDataList);
+                NotificationService.LogNotifications(batchResult.NotificationDataList);
 
-                //result will be used for TD Client Processing
+                if (campusLogicConfigSection.ISIRCorrectionsSettings.TdClientEnabled.HasValue && campusLogicConfigSection.ISIRCorrectionsSettings.TdClientEnabled.Value == true)
+                {
+                    var tdClientResult = manager.SendTdClientISIRCorrections().Result;
+
+                    //Log all(if any) of the error emails sent during the Automated ISIR Batch process
+                    NotificationService.LogNotifications(tdClientResult.NotificationDataList);
+                }
             }
             catch (Exception ex)
             {
