@@ -30,11 +30,12 @@ namespace CampusLogicEvents.Web.Models
                 {
                     foreach (JObject notificationEvent in eventData)
                     {
+                        //SV-1698 Allowing requeue of events already processed
                         //First verify we didn't already get and process this event using the unique identifier within the configured purge day window before we clear old events
                         var id = notificationEvent["Id"].ToString();
-                        var eventExists = dbContext.ReceivedEvents.Any(x => x.Id == id && x.ProcessedDateTime != null);
+                        var eventExists = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == id);
 
-                        if (!eventExists)
+                        if (eventExists == null)
                         {
                             dbContext.ReceivedEvents.Add(new ReceivedEvent()
                             {
@@ -42,6 +43,15 @@ namespace CampusLogicEvents.Web.Models
                                 EventData = notificationEvent.ToString(),
                                 ReceivedDateTime = DateTime.UtcNow
                             });
+                            dbContext.SaveChanges();
+
+                            BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
+                        }
+                       else
+                        {
+                            var eventToUpdate = dbContext.ReceivedEvents.First();
+                            eventToUpdate.EventData = notificationEvent.ToString();
+                            eventToUpdate.ReceivedDateTime = DateTime.UtcNow;
                             dbContext.SaveChanges();
 
                             BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
@@ -333,7 +343,7 @@ namespace CampusLogicEvents.Web.Models
                     dbContext.Database.ExecuteSqlCommand("Delete from [Log] where [Date] < DateAdd(d, -" + purgeLogRecordsAfterDays + ", GetUtcDate())");
 
                     //Clean up notification log records older then configured number of days
-                    dbContext.Database.ExecuteSqlCommand("Delete from [NotificationLog] where [TimeSent] < DateAdd(d, -" + purgeNotificaitonLogRecordsAfterDays + ", GetUtcDate())");
+                    dbContext.Database.ExecuteSqlCommand("Delete from [NotificationLog] where [DateSent] < DateAdd(d, -" + purgeNotificaitonLogRecordsAfterDays + ", GetUtcDate())");
 
                     //Clean up Received event records older then configured number of days
                     dbContext.Database.ExecuteSqlCommand("Delete from [ReceivedEvent] where [ReceivedDateTime] < DateAdd(d, -" + purgeReceivedEventsAfterDays + ", GetUtcDate())");
