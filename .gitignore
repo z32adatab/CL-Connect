@@ -43,3 +43,6 @@ Temporary Items
 
 dotNetFx45_Full_setup.exe
 SqlLocalDB.MSI
+
+Views/Setup/AwardLetter.cshtml
+Views/Setup/EventNotification.cshtml

@@ -95,7 +95,7 @@
 
         function onLoad() {
             checkForDuplicateEvent();
-            if (vm.clientDatabaseConnection.connectionString.includes('DSN')) {
+            if (vm.clientDatabaseConnection.connectionString.indexOf("DSN") >= 0) {
                 vm.connectionStringType = 'd';
                 var keyValuePairs = vm.clientDatabaseConnection.connectionString.split(';');
                 for (var i = 0; i < keyValuePairs.length; i++) {

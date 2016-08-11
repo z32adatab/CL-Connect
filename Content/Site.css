@@ -253,6 +253,10 @@ a:hover, a:focus {
     padding-top: 7px;
 }
 
+.padding-bottom-seven {
+    padding-bottom: 7px;
+}
+
 .padding-bottom-ten {
     padding-bottom: 10px;
 }
