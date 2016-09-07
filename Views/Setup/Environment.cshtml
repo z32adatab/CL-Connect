@@ -28,7 +28,7 @@
         <div class="col-md-6">
             <h4>
                 <span class="form-required" aria-hidden="true">*</span>
-                <b>What configurations would you like to enable?</b>
+                <b>Which configurations would you like to enable?</b>
             </h4>
             <div class="col-md-12">
                 <div class="padding-five">
@@ -44,6 +44,10 @@
                     <label class="k-checkbox-label" for="awardLetterUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter data file upload">AwardLetter Uploads</label>
                 </div>
                 <div class="padding-five">
+                    <input type="checkbox" id="documentImports" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.documentImportSettings.enabled, 'documentImportsValid');" ng-model="service.configurationModel.campusLogicSection.documentImportSettings.enabled">
+                    <label class="k-checkbox-label" for="documentImports" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables ability to import student documents into StudentVerification">Document Imports</label>
+                </div>
+                <div class="padding-five">
                     <input type="checkbox" id="isirBatchCorrections" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled, 'isirCorrectionsValid');" ng-model="service.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled">
                     <label class="k-checkbox-label" for="isirBatchCorrections" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates ISIR Batch Corrections">ISIR Batch Corrections</label>
                 </div>
@@ -55,8 +59,12 @@
                         <label class="k-checkbox-label" for="documentImaging" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables document specific notifications and processing">Documents</label>
                     </div>
                     <div class="sub-check-box">
-                        <input type="checkbox" id="storedProcedure" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.storedProceduresEnabled, 'storedProcedureValid');" ng-model="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <input type="checkbox" id="storedProcedure" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.storedProceduresEnabled, 'storedProcedureValid');" ng-model="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
                         <label class="k-checkbox-label" for="storedProcedure" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables configurable procedure">Stored Procedure</label>
+                    </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="fileStore" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled, 'fileStoreSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <label class="k-checkbox-label" for="fileStore" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables file store configuration">File Store</label>
                     </div>
                 </div>
             </div>

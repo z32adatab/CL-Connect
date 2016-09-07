@@ -68,24 +68,34 @@ angular.module('clConnectApp')
 		            controller: "smtpcontroller"
 		        })
                 .when("/isirUpload", {
-                     templateUrl: "/setup/isirupload",
-                     controller: "isiruploadcontroller",
-                     controllerAs: "vm"
+                    templateUrl: "/setup/isirupload",
+                    controller: "isiruploadcontroller",
+                    controllerAs: "vm"
                 })
                 .when("/awardLetterUpload", {
                     templateUrl: "/setup/awardletterupload",
-                      controller: "awardletteruploadcontroller",
-                      controllerAs: "vm"
-                  })
-		         .when("/isircorrections", {
-		             templateUrl: "/setup/isircorrection",
-		             controller: "isircorrectioncontroller",
-		             controllerAs: "vm"
-		         })
+                    controller: "awardletteruploadcontroller",
+                    controllerAs: "vm"
+                })
+                .when("/documentImports", {
+                    templateUrl: "/setup/documentimports",
+                    controller: "documentimportscontroller",
+                    controllerAs: "vm"
+                })
+		        .when("/isircorrections", {
+		            templateUrl: "/setup/isircorrection",
+		            controller: "isircorrectioncontroller",
+		            controllerAs: "vm"
+		        })
                 .when("/storedprocedure", {
                     templateUrl: "/setup/storedprocedure",
                     controller: "storedprocedurecontroller"
                 })
+                 .when("/filestore", {
+                     templateUrl: "/setup/filestore",
+                     controller: "fileStoreController",
+                     controllerAs: "vm"
+                 })
                 .when("/document", {
                     templateUrl: "/setup/document",
                     controller: "documentcontroller",

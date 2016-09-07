@@ -88,7 +88,8 @@ namespace CampusLogicEvents.Web.WebAPI
                 //temp workaround for deserialization issue
                 response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false) 
                                                                             || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false) 
-                                                                            || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false); 
+                                                                            || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false); 
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =
@@ -148,6 +149,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     campusLogicSection.EventNotifications.Add(eventNotificationHandler);
                 }
 
+                campusLogicSection.FileStoreSettings = configurationModel.CampusLogicSection.FileStoreSettings;
+                foreach (FieldMapSettings fieldMapSetting in configurationModel.CampusLogicSection.FileStoreSettings.FileStoreMappingCollection)
+                {
+                    campusLogicSection.FileStoreSettings.FileStoreMappingCollectionConfig.Add(fieldMapSetting);
+                }
+
                 campusLogicSection.DocumentSettings = configurationModel.CampusLogicSection.DocumentSettings;
                 foreach (FieldMapSettings fieldMapSetting in configurationModel.CampusLogicSection.DocumentSettings.FieldMappingCollection)
                 {
@@ -182,6 +189,7 @@ namespace CampusLogicEvents.Web.WebAPI
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;
                 campusLogicSection.SMTPSettings = configurationModel.CampusLogicSection.SMTPSettings;
                 campusLogicSection.ClientDatabaseConnection = configurationModel.CampusLogicSection.ClientDatabaseConnection;
+                campusLogicSection.DocumentImportSettings = configurationModel.CampusLogicSection.DocumentImportSettings;
                 smtpSection.DeliveryMethod = configurationModel.SmtpSection.DeliveryMethod;
                 smtpSection.DeliveryFormat = configurationModel.SmtpSection.DeliveryFormat;
                 smtpSection.From = configurationModel.SmtpSection.From;
@@ -256,6 +264,8 @@ namespace CampusLogicEvents.Web.WebAPI
                     EventNotificationsValid = true,
                     ConnectionStringValid = true,
                     DocumentSettingsValid = true,
+                    FileStoreSettingsValid = true,
+                    DocumentImportsValid = true,
                     StoredProcedureValid = true,
                     DuplicatePath = false,
                     DuplicateEvent = false
@@ -317,6 +327,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.EventNotificationsValid != null && (bool)!response.EventNotificationsValid)
                     || (response.ConnectionStringValid != null && (bool)!response.ConnectionStringValid)
                     || (response.DocumentSettingsValid != null && (bool)!response.DocumentSettingsValid)
+                    || (response.FileStoreSettingsValid != null && (bool)!response.FileStoreSettingsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
                     || !response.ApiCredentialsValid)
                 {

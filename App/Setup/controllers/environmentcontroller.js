@@ -17,6 +17,7 @@
             $scope.service.configurationModel = configurations;
             //temp workaround for deserialization issue              
             setupservice.configurationModel.campusLogicSection.eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotifications;
+            setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreMappingCollection = setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreMappingCollectionConfig;
             setupservice.configurationModel.campusLogicSection.documentSettings.fieldMappingCollection = setupservice.configurationModel.campusLogicSection.documentSettings.fieldMappingCollectionConfig;
             setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun = setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun.split(',');
             setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun = setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun.split(',');
@@ -31,6 +32,7 @@
             if (!$scope.service.configurationModel.campusLogicSection.eventNotifications.eventNotificationsEnabled) {
                 $scope.service.configurationModel.campusLogicSection.documentSettings.documentsEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.storedProceduresEnabled = false;
+                $scope.service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled = false;
             }
         }
 

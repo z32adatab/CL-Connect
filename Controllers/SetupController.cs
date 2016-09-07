@@ -75,8 +75,8 @@ namespace CampusLogicEvents.Web.Controllers
             return PartialView();
         }
 
-       
-		public ActionResult ISIRCorrection()
+
+        public ActionResult ISIRCorrection()
         {
             if (!Request.IsLocal)
             {
@@ -86,7 +86,7 @@ namespace CampusLogicEvents.Web.Controllers
             return PartialView();
         }
 
-public ActionResult StoredProcedure()
+        public ActionResult StoredProcedure()
         {
             if (!Request.IsLocal)
             {
@@ -95,7 +95,7 @@ public ActionResult StoredProcedure()
 
             return PartialView();
         }
-		 public ActionResult AwardLetterUpload()
+        public ActionResult AwardLetterUpload()
         {
             if (!Request.IsLocal)
             {
@@ -104,7 +104,28 @@ public ActionResult StoredProcedure()
 
             return PartialView();
         }
+
+        public ActionResult DocumentImports()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
         public ActionResult Document()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
+        public ActionResult FileStore()
         {
             if (!Request.IsLocal)
             {

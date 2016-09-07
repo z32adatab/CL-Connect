@@ -9,6 +9,7 @@ using CampusLogicEvents.Implementation.Models;
 using CampusLogicEvents.Web.Areas.HelpPage.ModelDescriptions;
 using Hangfire;
 using log4net;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace CampusLogicEvents.Web.Models
@@ -138,40 +139,51 @@ namespace CampusLogicEvents.Web.Models
                     var eventHandler = campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == eventData.EventNotificationId) ??
                                        campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == 0); //If no specific handler was provided check for the catch all handler
 
-                    //Check if the transaction category was one of the three appeal types
-                    if (eventData.SvTransactionCategoryId != null)
-                    {
-                        if (((TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.SapAppeal
-                            || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjDependencyOverrideAppeal
-                            || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjEfcAppeal) && eventData.EventNotificationName == "Transaction Completed")
-                        {
-                            if (eventData.SvTransactionId == null)
-                            {
-                                throw new Exception("A transaction Id is needed to get the appeal meta data");
-                            }
-                            var manager = new AppealManager();
-                            manager.GetAuthorizationForSV();
-                            eventData.TransactionOutcomeId = manager.GetAppealMetaData((int)eventData.SvTransactionId).Result;
-                        }
-                    }
-                    //check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
-                    if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
-                    {
-                        if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
-                        {
-                            throw new Exception("An AdditionalInfoId is needed to get the communication event meta data");
-                        }
-                        var manager = new CommunicationManager();
-                        manager.GetAuthorizationForSV();
-                        CommunicationActivityMetadata communicationActivityMetadata = manager.GetCommunicationActivityMetaData((int)eventData.AdditionalInfoId).Result;
-                        eventData.CommunicationBody = communicationActivityMetadata.Body;
-                        eventData.CommunicationTypeId = communicationActivityMetadata.CommunicationTypeId;
-                        eventData.CommunicationType = communicationActivityMetadata.CommunicationType;
-                        eventData.CommunicationAddress = communicationActivityMetadata.CommunicationAddress;
-                    }
                     if (eventHandler != null)
                     {
-                        //Send it to the correct handler
+                        //Enhance the Event Data for certain situations
+
+                        //Check if the transaction category was one of the three appeal types
+                        if (eventData.SvTransactionCategoryId != null)
+                        {
+                            if (((TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.SapAppeal
+                                || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjDependencyOverrideAppeal
+                                || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjEfcAppeal) && eventData.EventNotificationName == "Transaction Completed")
+                            {
+                                if (eventData.SvTransactionId == null)
+                                {
+                                    throw new Exception("A transaction Id is needed to get the appeal meta data");
+                                }
+                                var manager = new AppealManager();
+                                manager.GetAuthorizationForSV();
+                                eventData.TransactionOutcomeId = manager.GetAppealMetaData((int)eventData.SvTransactionId).Result;
+                            }
+                        }
+
+                        //Was a documentId sent over? If so, populate the Document Metadata.
+                        if (eventData.SvDocumentId > 0)
+                        {
+                                var manager = new DocumentManager();
+                                eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+                        }
+
+                        //Check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
+                        if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
+                        {
+                            if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
+                            {
+                                throw new Exception("An AdditionalInfoId is needed to get the communication event meta data");
+                            }
+                            var manager = new CommunicationManager();
+                            manager.GetAuthorizationForSV();
+                            CommunicationActivityMetadata communicationActivityMetadata = manager.GetCommunicationActivityMetaData((int)eventData.AdditionalInfoId).Result;
+                            eventData.CommunicationBody = communicationActivityMetadata.Body;
+                            eventData.CommunicationTypeId = communicationActivityMetadata.CommunicationTypeId;
+                            eventData.CommunicationType = communicationActivityMetadata.CommunicationType;
+                            eventData.CommunicationAddress = communicationActivityMetadata.CommunicationAddress;
+                        }
+                        
+                        //Now Send it to the correct handler
                         if (eventHandler.HandleMethod == "DatabaseCommandNonQuery")
                         {
                             DatabaseCommandNonQueryHandler(eventData, eventHandler.DbCommandFieldValue);
@@ -193,6 +205,15 @@ namespace CampusLogicEvents.Web.Models
                         {
                             DocumentRetrievalHandler(eventData);
                             DatabaseCommandNonQueryHandler(eventData, eventHandler.DbCommandFieldValue);
+                        }
+                        else if (eventHandler.HandleMethod == "FileStore")
+                        {
+                            FileStoreHandler(eventData);
+                        }
+                        else if (eventHandler.HandleMethod == "FileStoreAndDocumentRetrieval")
+                        {
+                            FileStoreHandler(eventData);
+                            DocumentRetrievalHandler(eventData);
                         }
                     }
 
@@ -220,7 +241,7 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="databaseCommand"></param>
         private static void DatabaseCommandNonQueryHandler(EventNotificationData eventData, string databaseCommand)
         {
-            var documentValues = new EventPropertyValues(null, null, eventData);
+            var documentValues = new EventPropertyValues(eventData);
             var commandText = documentValues.ReplaceStringProperties(databaseCommand);
             ClientDatabaseManager.ExecuteDatabaseNonQuery(commandText);
         }
@@ -233,11 +254,10 @@ namespace CampusLogicEvents.Web.Models
         private static void DatabaseStoredProcedure(EventNotificationData eventData, string storedProcedureName)
         {
             var storedProcedureSettings = campusLogicConfigSection.StoredProcedures.GetStoredProcedure(storedProcedureName);
-
             if (storedProcedureSettings != null)
             {
                 // Parse parameters based on config.
-                EventPropertyValues eventPropertyValues = new EventPropertyValues(null, null, eventData);
+                EventPropertyValues eventPropertyValues = new EventPropertyValues(eventData);
                 List<OdbcParameter> parameters =
                     storedProcedureSettings.GetParameters().Select(p => ParseParameter(p, eventPropertyValues)).ToList();
 
@@ -312,8 +332,11 @@ namespace CampusLogicEvents.Web.Models
                 return;
             }
 
-            //First pull the document metadata
-            DocumentMetaData metaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+            //First make sure we have the document metadata otherwise get it
+            if (eventData.DocumentMetaData.Id == 0)
+            {
+                eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+            }
 
             //Get and Store the Documents
             var dataFiles = manager.GetDocumentFiles(eventData.SvDocumentId.Value, eventData);
@@ -321,7 +344,26 @@ namespace CampusLogicEvents.Web.Models
             //If required create an index file
             if (dataFiles.Any() && (campusLogicConfigSection.DocumentSettings.IndexFileEnabled ?? false))
             {
-                manager.CreateDocumentsIndexFile(dataFiles, eventData, metaData);
+                manager.CreateDocumentsIndexFile(dataFiles, eventData);
+            }
+        }
+
+        /// <summary>
+        /// The File Store Handler. Surprise!
+        /// </summary>
+        public static void FileStoreHandler(EventNotificationData eventData)
+        {
+            try
+            {
+                using (var dbContext = new CampusLogicContext())
+                {
+                    //Insert the event into the EventNotification table so that it can be processed by the Automated File Store job.
+                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[EventNotification]([EventNotificationId], [Message], [CreatedDateTime], [ProcessGuid]) VALUES({eventData.EventNotificationId}, '{JsonConvert.SerializeObject(eventData)}', GetUtcDate(), NULL)");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"An error occured when attempting to handle the event data for file store: {ex}");
             }
         }
 
@@ -347,6 +389,9 @@ namespace CampusLogicEvents.Web.Models
 
                     //Clean up Received event records older then configured number of days
                     dbContext.Database.ExecuteSqlCommand("Delete from [ReceivedEvent] where [ReceivedDateTime] < DateAdd(d, -" + purgeReceivedEventsAfterDays + ", GetUtcDate())");
+
+                    //Clean up event notifications logged in the EventNotification table
+                    dbContext.Database.ExecuteSqlCommand("DELETE FROM [dbo].[EventNotification] WHERE [CreatedDateTime] < DateAdd(d, -" + purgeReceivedEventsAfterDays + ", GetUtcDate()) AND [ProcessGuid] IS NOT NULL");
                 }
             }
             catch (Exception ex)

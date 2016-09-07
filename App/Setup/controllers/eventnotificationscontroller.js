@@ -5,9 +5,9 @@
         .module('clConnectControllers')
         .controller('eventnotificationscontroller', eventnotificationscontroller);
 
-    eventnotificationscontroller.$inject = ['resolveEventNotificationTypes', 'setupservice', 'validationservice', '$timeout'];
+    eventnotificationscontroller.$inject = ['resolveEventNotificationTypes', 'setupservice', 'validationservice'];
 
-    function eventnotificationscontroller(resolveEventNotificationTypes, setupservice, validationservice, $timeout) {
+    function eventnotificationscontroller(resolveEventNotificationTypes, setupservice, validationservice) {
         var vm = this;
 
         vm.addEventNotification = addEventNotification;
@@ -20,6 +20,7 @@
         vm.eventNotifications = setupservice.configurationModel.campusLogicSection.eventNotifications;
         vm.eventNotificationTypes = resolveEventNotificationTypes;
         vm.IsCommandEnabled = IsCommandEnabled;
+        vm.IsFileStoreEnabled = IsFileStoreEnabled;
         vm.onConnectionStringTypeChange = onConnectionStringTypeChange;
         vm.removeEventNotification = removeEventNotification;
         vm.testConnectionString = testConnectionString;
@@ -58,9 +59,24 @@
             return eventNotificationType.isCommandAttributeRequired;
         }
 
+        function IsFileStoreEnabled(index) {
+            var eventNotificationTypeId = vm.eventNotifications[index].handleMethod;
+            if (!eventNotificationTypeId)
+                return false;
+
+            var eventNotificationType = $.grep(vm.eventNotificationTypes, function (e) { return e.eventNotificationTypeId == eventNotificationTypeId; })[0];
+            return eventNotificationType.isFileStoreTypeRequired;
+        }
+
         function handleMethodChange(e) {
-            if (e.handleMethod === 'DocumentRetrieval') {
+            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval') {
                 e.dbCommandFieldValue = '';
+            }
+            if (e.handleMethod !== 'FileStore' || e.handleMethod !== 'FileStoreAndDocumentRetrieval') {
+                e.fileStoreType = '';
+            }
+            if (e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval') {
+                e.fileStoreType = 'Shared';
             }
         }
 
@@ -74,12 +90,19 @@
                     break;
                 case 'n':
                     vm.clientDatabaseConnection.connectionString = '';
-                    if (vm.eventNotifications.some(function(eventNotification) {
-                        return (eventNotification.handleMethod !== 'DocumentRetrieval');
-                    })) {
+                    if (vm.eventNotifications.some(function (eventNotification)
+                    {
+                        return (eventNotification.handleMethod !== 'DocumentRetrieval'
+                               && eventNotification.handleMethod !== 'FileStore'
+                               && eventNotification.handleMethod !== 'FileStoreAndDocumentRetrieval'
+                        );
+                    }))
+                    {
                         vm.usingDatabase = true;
                         validationservice.pageValidations.connectionStringValid = false;
-                    } else {
+                    }
+                    else
+                    {
                         vm.usingDatabase = false;
                     }
                     break;

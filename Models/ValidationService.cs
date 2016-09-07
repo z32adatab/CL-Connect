@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Configuration;
@@ -9,7 +7,6 @@ using System.Net.Http;
 using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
-using Hangfire;
 using log4net;
 
 namespace CampusLogicEvents.Web.Models
@@ -56,17 +53,26 @@ namespace CampusLogicEvents.Web.Models
                 {
                     response.DocumentSettingsValid = ValidateDocumentSettings(configurationModel.CampusLogicSection.DocumentSettings).IsSuccessStatusCode;
                 }
+                if (configurationModel.CampusLogicSection.DocumentImportSettings.Enabled)
+                {
+                    response.DocumentImportsValid = ValidateDocumentImportSettings(configurationModel.CampusLogicSection.DocumentImportSettings).IsSuccessStatusCode;
+                }
+                if (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+                {
+                    response.FileStoreSettingsValid = ValidateFileStoreSettings(configurationModel.CampusLogicSection.FileStoreSettings).IsSuccessStatusCode;
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
                     || (configurationModel.CampusLogicSection.ISIRUploadSettings.ISIRUploadEnabled ?? false)
                     || (configurationModel.CampusLogicSection.ISIRCorrectionsSettings.CorrectionsEnabled ?? false)
-                    || (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false))
+                    || (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
+                    || (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false))
                 {
                     response.DuplicatePath = !ValidatePathsUnique(configurationModel);
                 }
 
-                if ((!(configurationModel.CampusLogicSection.EventNotificationsEnabled ?? false)) || configurationModel.CampusLogicSection.EventNotificationsList.Count == 0)
+                if (!(configurationModel.CampusLogicSection.EventNotificationsEnabled ?? false) || configurationModel.CampusLogicSection.EventNotificationsList.Count == 0)
                 {
                     return response;
                 }
@@ -104,6 +110,10 @@ namespace CampusLogicEvents.Web.Models
             {
                 pathsToValidate.Add(configuration.CampusLogicSection.DocumentSettings.DocumentStorageFilePath);
             }
+            if (configuration.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+            {
+                pathsToValidate.Add(configuration.CampusLogicSection.FileStoreSettings.FileStorePath);
+            }
 
             if (pathsToValidate.Count > 1)
             {
@@ -132,7 +142,9 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            if (eventNotifications.All(x => x.HandleMethod == "DocumentRetrieval"))
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval" };
+
+            if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
                 return true;
             }
@@ -298,6 +310,28 @@ namespace CampusLogicEvents.Web.Models
             }
         }
 
+        public static HttpResponseMessage ValidateDocumentImportSettings(DocumentImportSettings settings)
+        {
+            try
+            {
+                DocumentManager documentManager = new DocumentManager();
+                if (documentManager.ValidateDirectory(settings.FileDirectory) &&
+                    documentManager.ValidateDirectory(settings.ArchiveDirectory))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                }
+                else
+                {
+                    return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.ErrorFormat("TestWritePermissions Get Error: {0}", ex);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+        }
+
         /// <summary>
         /// Validate the ISIR Corrections
         /// file path
@@ -410,6 +444,83 @@ namespace CampusLogicEvents.Web.Models
             }
             catch (Exception exception)
             {
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Validates the File Store Settings
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public static HttpResponseMessage ValidateFileStoreSettings(FileStoreSettings settings)
+        {
+            try
+            {
+                if (settings.FileStoreEnabled == null)
+                {
+                    throw new Exception();
+                }
+
+                if (string.IsNullOrEmpty(settings.FileStorePath))
+                {
+                    throw new Exception();
+                }
+                else
+                {
+                    FileStoreManager documentManager = new FileStoreManager();
+                    if (!documentManager.ValidateDirectory(settings.FileStorePath))
+                    {
+                        throw new Exception();
+                    }
+                }
+                if (string.IsNullOrEmpty(settings.FileStoreNameFormat))
+                {
+                    throw new Exception();
+                }
+
+                if (settings.IncludeHeaderRecord == null)
+                {
+                    throw new Exception();
+                }
+
+                if (string.IsNullOrEmpty(settings.FileExtension))
+                {
+                    throw new Exception();
+                }
+
+                if (string.IsNullOrEmpty(settings.FileStoreFileFormat))
+                {
+                    throw new Exception();
+                }
+
+                if (settings.FileStoreMappingCollection.Count == 0)
+                {
+                    throw new Exception();
+                }
+
+                //loop through each field mapping
+                foreach (FieldMapSettings fieldMapping in settings.FileStoreMappingCollection)
+                {
+                    if (fieldMapping.FieldSize == null)
+                    {
+                        throw new Exception();
+                    }
+                    if (fieldMapping.DataType == null)
+                    {
+                        throw new Exception();
+                    }
+                    if (fieldMapping.FileFieldName == null)
+                    {
+                        throw new Exception();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.Error(exception);
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
             }
 

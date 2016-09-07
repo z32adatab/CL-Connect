@@ -30,8 +30,10 @@
             testIsirUploadPath: testIsirUpload,
             testIsirCorrections: testIsirCorrections,
             testStoredProcedure: testStoredProcedure,
+            testFileStoreSettings: testFileStoreSettings,
             testAwardLetterUploadPath: testAwardLetterUpload,
             testDocumentSettings: testDocumentSettings,
+            testDocumentImports: testDocumentImports,
             folderPathUnique: folderPathUnique,
             testFolderPath: testFolderPath,
             checkForDuplicateEvent: checkForDuplicateEvent
@@ -69,7 +71,10 @@
             filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStorePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.tdClientArchiveFilePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
             if (uploadpath) {
                 var matches = $.grep(filePathValues, function (filePath) {
                     return uploadpath === filePath;
@@ -96,6 +101,7 @@
             if (pageValid === 'eventNotificationsValid') {
                 delete (service.pageValidations[pageValid]);
                 delete (service.pageValidations["documentSettingsValid"]);
+                delete (service.pageValidations["fileStoreSettingsValid"]);
                 delete (service.pageValidations["storedProcedureValid"]);
                 delete (service.pageValidations["connectionStringValid"]);
             } else {
@@ -105,6 +111,10 @@
 
         function addPageValidation(pageValid) {
             service.pageValidations[pageValid] = true;
+
+            if (pageValid === 'eventNotificationsValid') {
+                service.pageValidations['connectionStringValid'] = true;
+            }
         }
 
         function validateStep(currentStep, form) {
@@ -139,6 +149,12 @@
                 case '/document':
                     service.testDocumentSettings(form);
                     break;
+                case '/documentImports':
+                    service.testDocumentImports();
+                    break;
+                case '/filestore':
+                    service.testFileStoreSettings(form);
+                    break;
                 default:
                     return;
             }
@@ -168,6 +184,12 @@
             }
             if (setupservice.configurationModel.campusLogicSection.documentSettings.documentsEnabled) {
                 service.testDocumentSettings();
+            }
+            if (setupservice.configurationModel.campusLogicSection.documentImportSettings.enabled) {
+                service.testDocumentImports();
+            }
+            if (setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled) {
+                service.testFileStoreSettings();
             }
         }
 
@@ -207,10 +229,10 @@
                 if (service.pageValidations.isirUploadValid) {
                     service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath }
                         , function (response) {
-                        service.pageValidations.isirUploadValid = true;
-                    }, function (error) {
-                        service.pageValidations.isirUploadValid = false;
-                    });
+                            service.pageValidations.isirUploadValid = true;
+                        }, function (error) {
+                            service.pageValidations.isirUploadValid = false;
+                        });
                 }
             }
             else {
@@ -249,8 +271,7 @@
 
             if ($rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath) === false
                 && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.timeToRun) === false
-                && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length > 0)
-            {
+                && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length > 0) {
                 service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath }
                    , function (response) {
                        //service.pageValidations.isirCorrectionsValid = true;
@@ -269,13 +290,13 @@
                     && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientFtpUserId) === false
                     && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientFtpUsername) === false
                     && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath !== setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath) {
-                        service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientExecutablePath }, function(response) {
-                            service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath }, function(response) {
-                                service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientSecfileFolderPath }, function(response) {
-                                    //we are good
-                                }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
-                            }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
-                        }, function(error) { service.pageValidations.isirCorrectionsValid = false; });
+                    service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientExecutablePath }, function (response) {
+                        service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath }, function (response) {
+                            service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientSecfileFolderPath }, function (response) {
+                                //we are good
+                            }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
+                        }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
+                    }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
                 }
                 else {
                     service.pageValidations.isirCorrectionsValid = false;
@@ -295,24 +316,24 @@
 
         function testEventNotifications(form) {
             if (!service.checkForDuplicateEvent()) {
-            service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
+                service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
                 service.pageValidations.connectionStringValid = true;
                 if ((!form && !service.pageValidations.eventNotificationsConnectionTested) || form.$valid) {
-                service.pageValidations.eventNotificationsConnectionTested = false;
-                if (setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString && setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString.length > 0) {
-                    service.testConnectionString.get(
-                        {
-                            connectionString: setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString
-                        },
-                        function () {
-                            service.pageValidations.connectionStringValid = true;
-                            service.pageValidations.eventNotificationsConnectionTested = true;
-                        },
-                        function () {
-                            service.pageValidations.eventNotificationsConnectionTested = true;
-                            service.pageValidations.connectionStringValid = false;
-                        });
-                }
+                    service.pageValidations.eventNotificationsConnectionTested = false;
+                    if (setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString && setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString.length > 0) {
+                        service.testConnectionString.get(
+                            {
+                                connectionString: setupservice.configurationModel.campusLogicSection.clientDatabaseConnection.connectionString
+                            },
+                            function () {
+                                service.pageValidations.connectionStringValid = true;
+                                service.pageValidations.eventNotificationsConnectionTested = true;
+                            },
+                            function () {
+                                service.pageValidations.eventNotificationsConnectionTested = true;
+                                service.pageValidations.connectionStringValid = false;
+                            });
+                    }
                 }
             } else {
                 service.pageValidations.eventNotificationsValid = false;
@@ -431,10 +452,10 @@
                         if (service.testFolderPath(settings.documentStorageFilePath)) {
 
                             service.testReadWritePermissions.get({ directoryPath: settings.documentStorageFilePath }, function (response) {
-                             service.pageValidations.documentSettingsValid = true;
-                         }, function (error) {
-                             service.pageValidations.documentSettingsValid = false;
-                         });
+                                service.pageValidations.documentSettingsValid = true;
+                            }, function (error) {
+                                service.pageValidations.documentSettingsValid = false;
+                            });
                         } else {
                             service.pageValidations.documentSettingsValid = false;
                         }
@@ -459,6 +480,77 @@
                 toastr.error("An error occured while attempting to validate the Document Settings.");
             }
         }
+
+        function testFileStoreSettings(form) {
+            try {
+                service.pageValidations.fileStoreSettingsValid = form ? form.$valid : service.pageValidations.fileStoreSettingsValid;
+                if (!form || form.$valid) {
+
+                    service.pageValidations.fileStoreSettingsValid = true;
+                    var settings = setupservice.configurationModel.campusLogicSection.fileStoreSettings;
+                    if (settings.fileStoreEnabled === null) {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    if (settings.fileStorePath === undefined || settings.fileStorePath === null || settings.fileStorePath === "") {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    if (settings.fileStoreNameFormat === undefined || settings.fileStoreNameFormat === null || settings.fileStoreNameFormat === "") {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    else if (settings.includeHeaderRecord === null) {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    else if (settings.fileStoreMinutes === undefined || settings.fileStoreMinutes === null || settings.fileStoreMinutes === "") {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    else if (settings.fileExtension === undefined || settings.fileExtension === null || settings.fileExtension === "") {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    else if (settings.fileStoreFileFormat === undefined || settings.fileStoreFileFormat === null || settings.fileStoreFileFormat === "") {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    else if (settings.fileStoreMappingCollection.length === 0) {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+                    if (service.testFolderPath(settings.fileStorePath)) {
+
+                        service.testReadWritePermissions.get({ directoryPath: settings.fileStorePath }, function (response) {
+                            service.pageValidations.fileStoreSettingsValid = true;
+                        }, function (error) {
+                            service.pageValidations.fileStoreSettingsValid = false;
+                        });
+                    } else {
+                        service.pageValidations.fileStoreSettingsValid = false;
+                    }
+
+                    //loop through each field mapping
+                    for (var i = 0; i < settings.fileStoreMappingCollection.length; i++) {
+                        var fieldMapping = settings.fileStoreMappingCollection[i];
+                        if ($rootScope.isNullOrWhitespace(fieldMapping.fieldSize)) {
+                            service.pageValidations.fileStoreSettingsValid = false;
+                        }
+                        if ($rootScope.isNullOrWhitespace(fieldMapping.dataType)) {
+                            service.pageValidations.fileStoreSettingsValid = false;
+                        }
+                        if ($rootScope.isNullOrWhitespace(fieldMapping.fileFieldName)) {
+                            service.pageValidations.fileStoreSettingsValid = false;
+                        }
+                    }
+                }
+            }
+            catch (exception) {
+                toastr.error("An error occured while attempting to validate the File Store Settings.");
+            }
+        }
+
+        function testDocumentImports() {
+
+            var s = setupservice.configurationModel.campusLogicSection.documentImportSettings;
+
+            // Check truthiness of all values.
+            service.pageValidations.documentImportsValid = !!(s.enabled && s.frequency && s.fileDirectory && s.archiveDirectory && s.fileExtension);
+        }
+
         return service;
     }
 })();

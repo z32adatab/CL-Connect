@@ -39,5 +39,6 @@ namespace CampusLogicEvents.Web.Models
         public DbSet<ReceivedEvent> ReceivedEvents { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<NotificationLog> NotificationLogs { get; set; }
+        public DbSet<EventNotification> EventNotifications { get; set; }
     }
 }

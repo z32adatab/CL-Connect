@@ -12,14 +12,12 @@ namespace CampusLogicEvents.Web.Models
     using System;
     using System.Collections.Generic;
     
-    public partial class NotificationLog
+    public partial class EventNotification
     {
         public int Id { get; set; }
-        public string Recipients { get; set; }
-        public string Sender { get; set; }
-        public System.DateTime DateSent { get; set; }
-        public string Subject { get; set; }
-        public string Body { get; set; }
-        public bool FailedSending { get; set; }
+        public int EventNotificationId { get; set; }
+        public string Message { get; set; }
+        public System.DateTime CreatedDateTime { get; set; }
+        public Nullable<System.Guid> ProcessGuid { get; set; }
     }
 }

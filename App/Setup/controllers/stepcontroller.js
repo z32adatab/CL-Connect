@@ -119,6 +119,11 @@
                 case '/document':
                     form = $scope.documentForm;
                     break;
+                case '/documentImports':
+                    break;
+                case '/filestore':
+                    form = $scope.fileStoreForm;
+                    break;
                 default:
                     return;
             }
