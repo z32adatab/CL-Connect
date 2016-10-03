@@ -19,11 +19,12 @@
             setupservice.configurationModel.campusLogicSection.eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotifications;
             setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreMappingCollection = setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreMappingCollectionConfig;
             setupservice.configurationModel.campusLogicSection.documentSettings.fieldMappingCollection = setupservice.configurationModel.campusLogicSection.documentSettings.fieldMappingCollectionConfig;
-            setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun = setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun.split(',');
-            setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun = setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun.split(',');
-            setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun = $scope.service.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.split(",");
-
         }
+
+        setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun = angular.isArray(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun) ? setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun :  setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun.split(',');
+        setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun = angular.isArray(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun) ? setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun : setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun.split(',');
+        setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun = angular.isArray(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun) ? setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun : setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.split(',');
+
         if (!$scope.validationService.pageValidations) {
             $scope.validationService.pageValidations = pageValidations;
         }

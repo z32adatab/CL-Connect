@@ -57,20 +57,10 @@ namespace CampusLogicEvents.Web.WebAPI
                 //adjust all naming conventions that have changed
                 if (!appSettings.ContainsKey("Environment"))
                 {
+                    Assembly clConnectAssembly = Assembly.GetExecutingAssembly();
+                    AssemblyName clConnect = clConnectAssembly.GetName();
                     appSettings.Add("Environment", "initial");
-                    appSettings.Add("ClConnectVersion", "2.1.1");
-                    appSettings.Add("ApiUsername", appSettings["APIUsername"]);
-                    appSettings.Remove("APIUsername");
-                    appSettings.Add("ApiPassword", appSettings["APIPassword"]);
-                    appSettings.Remove("APIPassword");
-                    appSettings.Add("StsUrl", appSettings["STSURL"]);
-                    appSettings.Remove("STSURL");
-                    appSettings.Add("SvWebApiUrl", appSettings["SVWebAPIURL"]);
-                    appSettings.Remove("SVWebAPIURL");
-                    appSettings.Add("IncomingApiUsername", appSettings["IncomingAPIUsername"]);
-                    appSettings.Remove("IncomingAPIUsername");
-                    appSettings.Add("IncomingApiPassword", appSettings["IncomingAPIPassword"]);
-                    appSettings.Remove("IncomingAPIPassword");
+                    appSettings.Add("ClConnectVersion", clConnect.Version.ToString());
                     if (appSettings.ContainsKey("FileStoragePath"))
                     {
                         response.CampusLogicSection.DocumentSettings.DocumentStorageFilePath = appSettings["FileStoragePath"];
@@ -86,16 +76,29 @@ namespace CampusLogicEvents.Web.WebAPI
                 response.CampusLogicSection.DocumentSettings.DocumentsEnabled = response.CampusLogicSection.DocumentSettings.IndexFileEnabled;
                 response.AppSettingsSection = appSettings;
                 //temp workaround for deserialization issue
-                response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false) 
-                                                                            || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false) 
+                response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
                                                                             || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
-                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false); 
+                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false);
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =
                     response.CampusLogicSection.StoredProcedures.GetStoredProcedures()
                         .Select(sp => new StoredProcedureDto(sp.Name, sp.GetParameters().ToList()))
                         .ToList();
+
+                if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
+                {
+                    response.CampusLogicSection.DocumentImportSettings.Enabled = response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled;
+                    response.CampusLogicSection.DocumentImportSettings.FileExtension = response.CampusLogicSection.DocumentSettings.ImportSettings.FileExtension;
+                    response.CampusLogicSection.DocumentImportSettings.FileDirectory = response.CampusLogicSection.DocumentSettings.ImportSettings.FileDirectory;
+                    response.CampusLogicSection.DocumentImportSettings.ArchiveDirectory = response.CampusLogicSection.DocumentSettings.ImportSettings.ArchiveDirectory;
+                    response.CampusLogicSection.DocumentImportSettings.Frequency = response.CampusLogicSection.DocumentSettings.ImportSettings.Frequency;
+                    response.CampusLogicSection.DocumentImportSettings.HasHeaderRow = response.CampusLogicSection.DocumentSettings.ImportSettings.HasHeaderRow;
+                    response.CampusLogicSection.DocumentImportSettings.UseSSN = response.CampusLogicSection.DocumentSettings.ImportSettings.UseSSN;
+                }
+
+                response.CampusLogicSection.DocumentSettings.ImportSettings = null;
 
                 return Request.CreateResponse(HttpStatusCode.OK, response);
             }
