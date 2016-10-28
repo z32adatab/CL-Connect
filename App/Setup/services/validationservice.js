@@ -388,6 +388,7 @@
                             from: setupservice.configurationModel.smtpSection.from,
                             network: {
                                 defaultCredentials: setupservice.configurationModel.smtpSection.network.defaultCredentials,
+                                clientDomain: setupservice.configurationModel.smtpSection.network.clientDomain,
                                 enableSsl: setupservice.configurationModel.smtpSection.network.enableSsl,
                                 host: setupservice.configurationModel.smtpSection.network.host,
                                 password: setupservice.configurationModel.smtpSection.network.password,
