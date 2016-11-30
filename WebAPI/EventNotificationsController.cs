@@ -16,7 +16,8 @@ namespace CampusLogicEvents.Web.WebAPI
             new EventNotificationType { EventNotificationTypeId = "DocumentRetrievalAndStoredProc", IsCommandAttributeRequired = true, IsFileStoreTypeRequired = false, IsConnectionStringRequired = true, IsDocumentSettingsRequired = true, Label = "Document retrieval / procedure" },
             new EventNotificationType { EventNotificationTypeId = "DocumentRetrievalAndNonQuery", IsCommandAttributeRequired = true, IsFileStoreTypeRequired = false, IsConnectionStringRequired = true, IsDocumentSettingsRequired = true, Label = "Document retrieval / command" },
             new EventNotificationType { EventNotificationTypeId = "FileStore", IsCommandAttributeRequired = false, IsConnectionStringRequired = false, IsFileStoreTypeRequired = true, IsDocumentSettingsRequired = false, Label = "File Store" },
-            new EventNotificationType { EventNotificationTypeId = "FileStoreAndDocumentRetrieval", IsCommandAttributeRequired = false, IsConnectionStringRequired = false, IsFileStoreTypeRequired = true, IsDocumentSettingsRequired = true, Label = "File Store / Document Retrieval" }
+            new EventNotificationType { EventNotificationTypeId = "FileStoreAndDocumentRetrieval", IsCommandAttributeRequired = false, IsConnectionStringRequired = false, IsFileStoreTypeRequired = true, IsDocumentSettingsRequired = true, Label = "File Store / Document Retrieval" },
+            new EventNotificationType { EventNotificationTypeId = "AwardLetterPrint", IsCommandAttributeRequired = false, IsConnectionStringRequired = false, IsFileStoreTypeRequired = false, IsDocumentSettingsRequired = false, Label = "Print" }
         };
 
         [HttpGet]

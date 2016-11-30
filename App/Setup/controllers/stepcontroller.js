@@ -124,6 +124,12 @@
                 case '/filestore':
                     form = $scope.fileStoreForm;
                     break;
+                case '/awardLetterPrint':
+                    form = $scope.fileStoreForm;
+                    break;
+                case '/awardLetterFileMappingUpload':
+                    form = $scope.awardLetterFileMappingUploadForm;
+                    break;
                 default:
                     return;
             }

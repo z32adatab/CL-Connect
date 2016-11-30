@@ -31,7 +31,9 @@
             testIsirCorrections: testIsirCorrections,
             testStoredProcedure: testStoredProcedure,
             testFileStoreSettings: testFileStoreSettings,
+            testAwardLetterPrintSettings: testAwardLetterPrintSettings,
             testAwardLetterUploadPath: testAwardLetterUpload,
+            testFileMappingUploadPath: testFileMappingUpload,
             testDocumentSettings: testDocumentSettings,
             testDocumentImports: testDocumentImports,
             folderPathUnique: folderPathUnique,
@@ -69,9 +71,12 @@
             filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStorePath);
+            filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.tdClientArchiveFilePath);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
@@ -102,6 +107,7 @@
                 delete (service.pageValidations[pageValid]);
                 delete (service.pageValidations["documentSettingsValid"]);
                 delete (service.pageValidations["fileStoreSettingsValid"]);
+                delete (service.pageValidations["awardLetterPrintSettingsValid"]);
                 delete (service.pageValidations["storedProcedureValid"]);
                 delete (service.pageValidations["connectionStringValid"]);
             } else {
@@ -155,6 +161,9 @@
                 case '/filestore':
                     service.testFileStoreSettings(form);
                     break;
+                case '/awardLetterPrint':
+                    service.testAwardLetterPrintSettings(form);
+                    break;
                 default:
                     return;
             }
@@ -190,6 +199,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled) {
                 service.testFileStoreSettings();
+            }
+            if (setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled) {
+                service.testAwardLetterPrintSettings();
             }
         }
 
@@ -263,6 +275,32 @@
             }
             else {
                 service.pageValidations.awardLetterUploadValid = false;
+            }
+        }
+
+        function testFileMappingUpload() {
+            if (setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadDaysToRun.length > 0
+               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath)
+               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath)) {
+
+                service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath }
+                    , function (response) {
+                        service.pageValidations.fileMappingUploadValid = true;
+                    }, function (error) {
+                        service.pageValidations.fileMappingUploadValid = false;
+                    });
+
+                if (service.pageValidations.fileMappingUploadValid) {
+                    service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath }
+                        , function (response) {
+                            service.pageValidations.fileMappingUploadValid = true;
+                        }, function (error) {
+                            service.pageValidations.fileMappingUploadValid = false;
+                        });
+                }
+            }
+            else {
+                service.pageValidations.fileMappingUploadValid = false;
             }
         }
 
@@ -541,6 +579,20 @@
             }
             catch (exception) {
                 toastr.error("An error occured while attempting to validate the File Store Settings.");
+            }
+        }
+
+        function testAwardLetterPrintSettings() {
+            service.pageValidations.awardLetterPrintSettingsValid = true;
+            var settings = setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings;
+            if (settings.awardLetterPrintEnabled === null) {
+                service.pageValidations.awardLetterPrintSettingsValid = false;
+            }
+            if (settings.awardLetterPrintFilePath === undefined || settings.awardLetterPrintFilePath === null || settings.awardLetterPrintFilePath === "") {
+                service.pageValidations.awardLetterPrintSettingsValid = false;
+            }
+            if (settings.awardLetterPrintFileName === undefined || settings.awardLetterPrintFileName === null || settings.awardLetterPrintFileName === "") {
+                service.pageValidations.awardLetterPrintSettingsValid = false;
             }
         }
 

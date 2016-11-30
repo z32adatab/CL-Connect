@@ -69,7 +69,7 @@
         }
 
         function handleMethodChange(e) {
-            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval') {
+            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval' || e.handleMethod === 'Print') {
                 e.dbCommandFieldValue = '';
             }
             if (e.handleMethod !== 'FileStore' || e.handleMethod !== 'FileStoreAndDocumentRetrieval') {
@@ -95,6 +95,7 @@
                         return (eventNotification.handleMethod !== 'DocumentRetrieval'
                                && eventNotification.handleMethod !== 'FileStore'
                                && eventNotification.handleMethod !== 'FileStoreAndDocumentRetrieval'
+                               && eventNotification.handleMethod !== 'AwardLetterPrint'
                         );
                     }))
                     {

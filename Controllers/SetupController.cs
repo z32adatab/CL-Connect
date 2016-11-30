@@ -105,6 +105,16 @@ namespace CampusLogicEvents.Web.Controllers
             return PartialView();
         }
 
+        public ActionResult AwardLetterFileMappingUpload()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
         public ActionResult DocumentImports()
         {
             if (!Request.IsLocal)
@@ -126,6 +136,17 @@ namespace CampusLogicEvents.Web.Controllers
         }
 
         public ActionResult FileStore()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
+
+        public ActionResult AwardLetterPrint()
         {
             if (!Request.IsLocal)
             {

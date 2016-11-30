@@ -62,6 +62,11 @@
                                         AwardLetter Upload <i ng-if="!validationService.pageValidations.awardLetterUploadValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
                                     </a>
                                 </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled" ng-class="getActiveStep('/awardLetterFileMappingUpload')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/awardLetterFileMappingUpload" ng-click="validateStep();">
+                                        AwardLetter File Mapping Upload <i ng-if="!validationService.pageValidations.fileMappingUploadValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
                                 <li ng-if="service.configurationModel.campusLogicSection.documentImportSettings.enabled" ng-class="getActiveStep('/documentImports')">
                                     <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/documentImports" ng-click="validateStep();">
                                         Document Imports <i ng-if="!validationService.pageValidations.documentImportsValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
@@ -90,6 +95,11 @@
                                 <li ng-if="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-class="getActiveStep('/filestore')">
                                     <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/filestore" ng-click="validateStep();">
                                         File Store<i ng-if="!validationService.pageValidations.fileStoreSettingsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled" ng-class="getActiveStep('/awardLetterPrint')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/awardLetterPrint" ng-click="validateStep();">
+                                        Award Letter - Print<i ng-if="!validationService.pageValidations.awardLetterPrintSettingsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
                                     </a>
                                 </li>
                                 <li ng-class="getActiveStep('/saveConfigurations')">

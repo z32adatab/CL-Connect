@@ -190,6 +190,8 @@ namespace CampusLogicEvents.Web.WebAPI
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;
+                campusLogicSection.FileMappingUploadSettings = configurationModel.CampusLogicSection.FileMappingUploadSettings;
+                campusLogicSection.AwardLetterPrintSettings = configurationModel.CampusLogicSection.AwardLetterPrintSettings;
                 campusLogicSection.SMTPSettings = configurationModel.CampusLogicSection.SMTPSettings;
                 campusLogicSection.ClientDatabaseConnection = configurationModel.CampusLogicSection.ClientDatabaseConnection;
                 campusLogicSection.DocumentImportSettings = configurationModel.CampusLogicSection.DocumentImportSettings;
@@ -268,10 +270,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     ConnectionStringValid = true,
                     DocumentSettingsValid = true,
                     FileStoreSettingsValid = true,
+                    AwardLetterPrintSettingsValid = true,
                     DocumentImportsValid = true,
                     StoredProcedureValid = true,
                     DuplicatePath = false,
-                    DuplicateEvent = false
+                    DuplicateEvent = false,
+                    FileMappingUploadValid = true,
                 };
                 return Request.CreateResponse(HttpStatusCode.OK, newConfigurationValidationModel);
             }
@@ -331,6 +335,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.ConnectionStringValid != null && (bool)!response.ConnectionStringValid)
                     || (response.DocumentSettingsValid != null && (bool)!response.DocumentSettingsValid)
                     || (response.FileStoreSettingsValid != null && (bool)!response.FileStoreSettingsValid)
+                    || (response.AwardLetterPrintSettingsValid != null && (bool)!response.AwardLetterPrintSettingsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
                     || !response.ApiCredentialsValid)
                 {

@@ -44,6 +44,10 @@
                     <label class="k-checkbox-label" for="awardLetterUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter data file upload">AwardLetter Uploads</label>
                 </div>
                 <div class="padding-five">
+                    <input type="checkbox" id="fileMappingUpload" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled, 'fileMappingUploadValid');" ng-model="service.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled">
+                    <label class="k-checkbox-label" for="fileMappingUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter file mapping upload">AwardLetter File Mapping Uploads</label>
+                </div>
+                <div class="padding-five">
                     <input type="checkbox" id="documentImports" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.documentImportSettings.enabled, 'documentImportsValid');" ng-model="service.configurationModel.campusLogicSection.documentImportSettings.enabled">
                     <label class="k-checkbox-label" for="documentImports" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables ability to import student documents into StudentVerification">Document Imports</label>
                 </div>
@@ -63,8 +67,12 @@
                         <label class="k-checkbox-label" for="storedProcedure" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables configurable procedure">Stored Procedure</label>
                     </div>
                     <div class="sub-check-box">
-                        <input type="checkbox" id="fileStore" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled, 'fileStoreSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <input type="checkbox" id="fileStore" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled, 'fileStoreSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
                         <label class="k-checkbox-label" for="fileStore" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables file store configuration">File Store</label>
+                    </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="awardLetterPrint" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled, 'awardLetterPrintEnabled');" ng-model="service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <label class="k-checkbox-label" for="awardLetterPrint" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables print configuration for Award Letters">Award Letter Print</label>
                     </div>
                 </div>
             </div>

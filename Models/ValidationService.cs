@@ -61,13 +61,18 @@ namespace CampusLogicEvents.Web.Models
                 {
                     response.FileStoreSettingsValid = ValidateFileStoreSettings(configurationModel.CampusLogicSection.FileStoreSettings).IsSuccessStatusCode;
                 }
+                if (configurationModel.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+                {
+                    response.AwardLetterPrintSettingsValid = ValidateAwardLetterPrintSettings(configurationModel.CampusLogicSection.AwardLetterPrintSettings).IsSuccessStatusCode;
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
                     || (configurationModel.CampusLogicSection.ISIRUploadSettings.ISIRUploadEnabled ?? false)
                     || (configurationModel.CampusLogicSection.ISIRCorrectionsSettings.CorrectionsEnabled ?? false)
                     || (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
-                    || (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false))
+                    || (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+                    || (configurationModel.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false))
                 {
                     response.DuplicatePath = !ValidatePathsUnique(configurationModel);
                 }
@@ -114,6 +119,10 @@ namespace CampusLogicEvents.Web.Models
             {
                 pathsToValidate.Add(configuration.CampusLogicSection.FileStoreSettings.FileStorePath);
             }
+            if (configuration.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+            {
+                pathsToValidate.Add(configuration.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintFilePath);
+            }
 
             if (pathsToValidate.Count > 1)
             {
@@ -142,7 +151,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval" };
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint" };
 
             if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
@@ -527,6 +536,48 @@ namespace CampusLogicEvents.Web.Models
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
-    }
+        /// <summary>
+        /// Validates the File Store Settings
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public static HttpResponseMessage ValidateAwardLetterPrintSettings(AwardLetterPrintSettings settings)
+        {
+            try
+            {
+                if (settings.AwardLetterPrintEnabled == null)
+                {
+                    throw new Exception();
+                }
 
+                if (string.IsNullOrEmpty(settings.AwardLetterPrintFilePath))
+                {
+                    throw new Exception();
+                }
+                else
+                {
+                    FileStoreManager documentManager = new FileStoreManager();
+                    if (!documentManager.ValidateDirectory(settings.AwardLetterPrintFilePath))
+                    {
+                        throw new Exception();
+                    }
+                }
+                if (string.IsNullOrEmpty(settings.AwardLetterPrintFileName))
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.Error(exception);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
 }
+
+
+
+

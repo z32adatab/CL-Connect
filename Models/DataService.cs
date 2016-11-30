@@ -215,6 +215,10 @@ namespace CampusLogicEvents.Web.Models
                             FileStoreHandler(eventData);
                             DocumentRetrievalHandler(eventData);
                         }
+                        else if (eventHandler.HandleMethod == "AwardLetterPrint")
+                        {
+                            AwardLetterDocumentRetrievalHandler(eventData);
+                        }
                     }
 
                     //Update the received event with a processed date time
@@ -347,6 +351,27 @@ namespace CampusLogicEvents.Web.Models
                 manager.CreateDocumentsIndexFile(dataFiles, eventData);
             }
         }
+
+        /// <summary>
+        /// Used to get PDF
+        /// version of AL 
+        /// for printers
+        /// </summary>
+        /// <param name="eventData"></param>
+        private static void AwardLetterDocumentRetrievalHandler(EventNotificationData eventData)
+        {
+            var manager = new DocumentManager();
+
+            if (eventData.AlRecordId == null)
+            {
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.Id);
+                return;
+            }
+
+            //Get and Store the Documents
+            manager.GetAwarLetterPdfFile(eventData.AlRecordId.Value, eventData);
+        }
+
 
         /// <summary>
         /// The File Store Handler. Surprise!

@@ -77,6 +77,11 @@ angular.module('clConnectApp')
                     controller: "awardletteruploadcontroller",
                     controllerAs: "vm"
                 })
+                .when("/awardLetterFileMappingUpload", {
+                    templateUrl: "/setup/awardletterfilemappingupload",
+                    controller: "filemappinguploadcontroller",
+                    controllerAs: "vm"
+                })
                 .when("/documentImports", {
                     templateUrl: "/setup/documentimports",
                     controller: "documentimportscontroller",
@@ -91,9 +96,14 @@ angular.module('clConnectApp')
                     templateUrl: "/setup/storedprocedure",
                     controller: "storedprocedurecontroller"
                 })
-                 .when("/filestore", {
+                .when("/filestore", {
                      templateUrl: "/setup/filestore",
                      controller: "fileStoreController",
+                     controllerAs: "vm"
+                })
+                .when("/awardLetterPrint", {
+                     templateUrl: "/setup/awardLetterPrint",
+                     controller: "awardLetterPrintController",
                      controllerAs: "vm"
                  })
                 .when("/document", {
