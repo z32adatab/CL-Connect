@@ -21,11 +21,10 @@
 
     <div class="row">
         <div class="col-md-3">
-            <label for="printNameFormat"><span class="form-required" aria-hidden="true">*</span>File Name Format</label>
+            <label for="printNameFormat"><span aria-hidden="true"></span>File Name Format</label>
         </div>
         <div class="col-md-4">
-            <input type="text" class="form-control" id="printNameFormat" name="printNameFormat" ng-model="vm.service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFileName" required />
-            <span class="field-validation-error" ng-show="vm.awardLetterPrintForm.printNameFormat.$error.required">Required</span>
+            <input type="text" class="form-control" id="printNameFormat" name="printNameFormat" ng-model="vm.service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFileName" />
         </div>
     </div>
 </form>

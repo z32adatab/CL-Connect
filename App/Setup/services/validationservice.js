@@ -591,9 +591,6 @@
             if (settings.awardLetterPrintFilePath === undefined || settings.awardLetterPrintFilePath === null || settings.awardLetterPrintFilePath === "") {
                 service.pageValidations.awardLetterPrintSettingsValid = false;
             }
-            if (settings.awardLetterPrintFileName === undefined || settings.awardLetterPrintFileName === null || settings.awardLetterPrintFileName === "") {
-                service.pageValidations.awardLetterPrintSettingsValid = false;
-            }
         }
 
         function testDocumentImports() {

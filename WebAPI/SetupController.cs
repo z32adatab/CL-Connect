@@ -79,7 +79,8 @@ namespace CampusLogicEvents.Web.WebAPI
                 response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
                                                                             || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
                                                                             || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
-                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false);
+                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+                                                                            || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false);
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =

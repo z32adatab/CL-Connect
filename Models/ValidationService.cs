@@ -562,10 +562,6 @@ namespace CampusLogicEvents.Web.Models
                         throw new Exception();
                     }
                 }
-                if (string.IsNullOrEmpty(settings.AwardLetterPrintFileName))
-                {
-                    throw new Exception();
-                }
             }
             catch (Exception exception)
             {
