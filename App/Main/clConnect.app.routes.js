@@ -21,23 +21,30 @@ angular.module('clConnectApp')
 
             //--------------------------------------------------
 
+            var urlRoot = '';
+            urlRoot = $("base").first().attr("href");
+
+            
             //Register routes
             $routeProvider
                 .when("/", {
+                    templateUrl: urlRoot + "/home/menu"
+                })
+                .when(urlRoot, {
                     templateUrl: "/home/menu"
                 })
                 .when("/appSettings", {
                     controller: "appsettingscontroller",
                     controllerAs: "vm",
-                    templateUrl: "/setup/applicationsettings"
+                    templateUrl: urlRoot + "/setup/applicationsettings"
                 })
                 .when("/credentials", {
-                    templateUrl: "/setup/credentials",
+                    templateUrl: urlRoot + "/setup/credentials",
                     controller: "credentialscontroller",
                     controllerAs: "vm"
                 })
                 .when("/environment", {
-                    templateUrl: "/setup/environment",
+                    templateUrl: urlRoot + "/setup/environment",
                     controller: "environmentcontroller",
                     resolve: {
                         configurations: ["setupservice", function (setupservice) {
@@ -58,56 +65,56 @@ angular.module('clConnectApp')
                     resolve: {
                         resolveEventNotificationTypes: resolveEventNotificationTypes
                     },
-                    templateUrl: "/setup/eventNotifications"
+                    templateUrl: urlRoot + "/setup/eventNotifications"
                 })
                 .when("/saveConfigurations", {
-                    templateUrl: "/setup/saveConfigurations"
+                    templateUrl: urlRoot + "/setup/saveConfigurations"
                 })
 		        .when("/smtp", {
-		            templateUrl: "/setup/smtp",
+		            templateUrl: urlRoot + "/setup/smtp",
 		            controller: "smtpcontroller"
 		        })
                 .when("/isirUpload", {
-                    templateUrl: "/setup/isirupload",
+                    templateUrl: urlRoot + "/setup/isirupload",
                     controller: "isiruploadcontroller",
                     controllerAs: "vm"
                 })
                 .when("/awardLetterUpload", {
-                    templateUrl: "/setup/awardletterupload",
+                    templateUrl: urlRoot + "/setup/awardletterupload",
                     controller: "awardletteruploadcontroller",
                     controllerAs: "vm"
                 })
                 .when("/awardLetterFileMappingUpload", {
-                    templateUrl: "/setup/awardletterfilemappingupload",
+                    templateUrl: urlRoot + "/setup/awardletterfilemappingupload",
                     controller: "filemappinguploadcontroller",
                     controllerAs: "vm"
                 })
                 .when("/documentImports", {
-                    templateUrl: "/setup/documentimports",
+                    templateUrl: urlRoot + "/setup/documentimports",
                     controller: "documentimportscontroller",
                     controllerAs: "vm"
                 })
 		        .when("/isircorrections", {
-		            templateUrl: "/setup/isircorrection",
+		            templateUrl: urlRoot + "/setup/isircorrection",
 		            controller: "isircorrectioncontroller",
 		            controllerAs: "vm"
 		        })
                 .when("/storedprocedure", {
-                    templateUrl: "/setup/storedprocedure",
+                    templateUrl: urlRoot + "/setup/storedprocedure",
                     controller: "storedprocedurecontroller"
                 })
                 .when("/filestore", {
-                     templateUrl: "/setup/filestore",
-                     controller: "fileStoreController",
-                     controllerAs: "vm"
+                    templateUrl: urlRoot + "/setup/filestore",
+                    controller: "fileStoreController",
+                    controllerAs: "vm"
                 })
                 .when("/awardLetterPrint", {
-                     templateUrl: "/setup/awardLetterPrint",
-                     controller: "awardLetterPrintController",
-                     controllerAs: "vm"
-                 })
+                    templateUrl: urlRoot + "/setup/awardLetterPrint",
+                    controller: "awardLetterPrintController",
+                    controllerAs: "vm"
+                })
                 .when("/document", {
-                    templateUrl: "/setup/document",
+                    templateUrl: urlRoot + "/setup/document",
                     controller: "documentcontroller",
                     controllerAs: "vm"
                 })

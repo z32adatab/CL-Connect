@@ -1,10 +1,10 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
+    <base href="@Request.Url.Scheme://@Request.Url.Authority@Request.ApplicationPath.TrimEnd('/')/" />
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width"/>
     <title>@ViewBag.Title</title>
-
 </head>
 <body>
     <div ng-controller="stepcontroller">

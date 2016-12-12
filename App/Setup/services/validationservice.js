@@ -353,6 +353,7 @@
         }
 
         function testEventNotifications(form) {
+            service.pageValidations.eventNotificationsConnectionTested = false;
             if (!service.checkForDuplicateEvent()) {
                 service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
                 service.pageValidations.connectionStringValid = true;
