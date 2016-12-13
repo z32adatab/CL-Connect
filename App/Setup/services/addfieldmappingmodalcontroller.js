@@ -5,6 +5,9 @@ var clConnectServices = angular.module("clConnectServices");
 clConnectServices.factory("addfieldmappingmodalcontroller", ["$modal",
     function ($modal) {
 
+        var urlRoot = '';
+        urlRoot = $("base").first().attr("href");
+
         var service = {
 
             modalController: ["$rootScope", "$scope", "$modalInstance", "modalParams",
@@ -131,7 +134,7 @@ clConnectServices.factory("addfieldmappingmodalcontroller", ["$modal",
 
                 //Open modal
                 var $modalInstance = $modal.open({
-                    templateUrl: "/setup/template?templateName=AddFieldMappingModal",
+                    templateUrl: urlRoot + "/setup/template?templateName=AddFieldMappingModal",
                     controller: service.modalController,
                     resolve: {
                         modalParams: function () {
