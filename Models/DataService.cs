@@ -168,7 +168,7 @@ namespace CampusLogicEvents.Web.Models
                         }
 
                         //Check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
-                        if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
+                     if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
                         {
                             if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
                             {
@@ -382,8 +382,9 @@ namespace CampusLogicEvents.Web.Models
             {
                 using (var dbContext = new CampusLogicContext())
                 {
+                    var dataToSerialize = JsonConvert.SerializeObject(eventData).Replace("'", "''");
                     //Insert the event into the EventNotification table so that it can be processed by the Automated File Store job.
-                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[EventNotification]([EventNotificationId], [Message], [CreatedDateTime], [ProcessGuid]) VALUES({eventData.EventNotificationId}, '{JsonConvert.SerializeObject(eventData)}', GetUtcDate(), NULL)");
+                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[EventNotification]([EventNotificationId], [Message], [CreatedDateTime], [ProcessGuid]) VALUES({eventData.EventNotificationId}, '{dataToSerialize}', GetUtcDate(), NULL)");
                 }
             }
             catch (Exception ex)
