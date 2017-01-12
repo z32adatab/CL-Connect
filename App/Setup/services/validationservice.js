@@ -330,9 +330,6 @@
                     && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath !== setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath) {
                     service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientExecutablePath }, function (response) {
                         service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath }, function (response) {
-                            service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientSecfileFolderPath }, function (response) {
-                                //we are good
-                            }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
                         }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
                     }, function (error) { service.pageValidations.isirCorrectionsValid = false; });
                 }

@@ -357,8 +357,7 @@ namespace CampusLogicEvents.Web.Models
                     if (isirCorrectionsSettings.TdClientEnabled.HasValue && isirCorrectionsSettings.TdClientEnabled.Value == true)
                     {
                         if (documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientExecutablePath) &&
-                            documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientArchiveFilePath) &&
-                            documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientSecfileFolderPath))
+                            documentManager.ValidateDirectory(isirCorrectionsSettings.TdClientArchiveFilePath))
                         {
                             return new HttpResponseMessage(HttpStatusCode.OK);
                         }
