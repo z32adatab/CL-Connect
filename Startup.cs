@@ -61,10 +61,9 @@ namespace CampusLogicEvents.Web
             //Does the EventNotification table exist? If not, create it.
             VerifyEventNotificationTableExists();
 
-            bool? filestoreEnabled = campusLogicSection.EventNotifications.EventNotificationsEnabled;
-            var fileStoreConfigured = campusLogicSection.EventNotifications.Cast<EventNotificationHandler>().Any(x => x.HandleMethod.Contains("FileStore"));
+            bool? filestoreEnabled = campusLogicSection.FileStoreSettings.FileStoreEnabled;
 
-            if (filestoreEnabled == true && fileStoreConfigured)
+            if (filestoreEnabled == true)
             {
                 if (string.IsNullOrWhiteSpace(campusLogicSection.FileStoreSettings.FileStorePath))
                 {
@@ -76,6 +75,10 @@ namespace CampusLogicEvents.Web
                     RecurringJob.AddOrUpdate(() => FileStoreService.ProcessFileStore(),
                         "*/" + minutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
                 }
+            }
+            else
+            {
+                RecurringJob.RemoveIfExists("FileStoreService.ProcessFileStore");
             }
         }
 

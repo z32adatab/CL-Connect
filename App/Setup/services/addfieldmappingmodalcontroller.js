@@ -55,7 +55,7 @@ clConnectServices.factory("addfieldmappingmodalcontroller", ["$modal",
                             return "Database Command";
                         }
                         else if (modalParams.theItem.dynamicFieldValue) {
-                            return "Database Command";
+                            return "Dynamic Field Value";
                         }
                         return "";
                     }

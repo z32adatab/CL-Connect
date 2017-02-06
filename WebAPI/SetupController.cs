@@ -73,7 +73,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     response.CampusLogicSection.EventNotificationsEnabled = true;
                 }
 
-                response.CampusLogicSection.DocumentSettings.DocumentsEnabled = response.CampusLogicSection.DocumentSettings.IndexFileEnabled;
+                response.CampusLogicSection.DocumentSettings.DocumentsEnabled = response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? response.CampusLogicSection.DocumentSettings.IndexFileEnabled;
                 response.AppSettingsSection = appSettings;
                 //temp workaround for deserialization issue
                 response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)

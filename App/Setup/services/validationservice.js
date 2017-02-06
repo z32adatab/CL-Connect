@@ -67,22 +67,58 @@
 
         function folderPathUnique(uploadpath) {
             var filePathValues = [];
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStorePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFilePath);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.tdClientArchiveFilePath);
+            if (setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadFilePath);
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath);
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath);
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
+
+                if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientEnabled)
+                {
+                    filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath);
+                }
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.documentSettings.documentsEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled)
+            { 
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStorePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled)
+            {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFilePath);
+            }
+
+            if (setupservice.configurationModel.campusLogicSection.documentImportSettings.enabled)
+            {
+            
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
             filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
+            }
             if (uploadpath) {
                 var matches = $.grep(filePathValues, function (filePath) {
-                    return uploadpath === filePath;
+                    return uploadpath.toUpperCase() === filePath.toUpperCase();
                 });
                 if (matches.length > 1) {
                     return false;
