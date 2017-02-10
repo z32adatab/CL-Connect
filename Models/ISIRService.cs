@@ -48,7 +48,7 @@ namespace CampusLogicEvents.Web.Models
             catch (Exception ex)
             {
                 NotificationService.ErrorNotification("Automated ISIR Corrections Process", ex);
-                logger.ErrorFormat("ISIRService ISIRUpload Error: {0}", ex);
+                logger.ErrorFormat("ISIRService ISIR Correction Error: {0}", ex);
             }
 
         }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Models;
 using CsvHelper;
@@ -51,18 +52,23 @@ namespace CampusLogicEvents.Web.Models
 
                 try
                 {
-                    // Parse the file using CsvHelper library.
-                    using (CsvReader csvReader = new CsvReader(File.OpenText(filePath)))
+                    using (StreamReader sr = new StreamReader(filePath))
                     {
-                        csvReader.Configuration.RegisterClassMap<DocumentImportRecordCsvMap>();
-                        csvReader.Configuration.HasHeaderRecord = importSettings.HasHeaderRow;
-
-                        records = csvReader.GetRecords<DocumentImportRecord>().Select(record =>
+                        // Parse the file using CsvHelper library.
+                        using (CsvReader csvReader = new CsvReader(sr))
                         {
-                            // Manually set file path for use later.
-                            record.FilePath = Path.Combine(importSettings.FileDirectory, record.FileName);
-                            return record;
-                        }).ToList();
+                            csvReader.Configuration.RegisterClassMap<DocumentImportRecordCsvMap>();
+                            csvReader.Configuration.HasHeaderRecord = importSettings.HasHeaderRow;
+
+                            records = csvReader.GetRecords<DocumentImportRecord>().Select(record =>
+                            {
+                                // Manually set file path for use later.
+                                record.FilePath = Path.Combine(importSettings.FileDirectory, record.FileName);
+                                return record;
+                            }).ToList();
+                        }
+                        sr.Close();
+                        sr.Dispose();
                     }
                 }
                 catch (Exception ex)
@@ -142,9 +148,11 @@ namespace CampusLogicEvents.Web.Models
                 // Otherwise exception is thrown.
                 if (File.Exists(archiveFilePath))
                 {
+                    DocumentManager.WaitReady(archiveFilePath);
                     File.Delete(archiveFilePath);
                 }
-                
+
+                DocumentManager.WaitReady(filePath);
                 File.Move(filePath, archiveFilePath);
             }
         }
@@ -168,29 +176,32 @@ namespace CampusLogicEvents.Web.Models
             string fileName = Path.GetFileName(fileNameOrPath);
             string failureFilePath = Path.Combine(directory, fileName + ".failures");
 
-            // Create a new CSV file containing any failed records.
-            if (failedRecords != null && failedRecords.Any())
+            using (StreamWriter sw = new StreamWriter(failureFilePath))
             {
-                var stringBuilder = new StringBuilder();
-
-                // Append header row.
-                stringBuilder.AppendLine("Student ID, Document Name, File Name,Award Year,Failure Reason");
-
-                // Append row per failed record.
-                foreach (DocumentImportRecord record in failedRecords)
+                // Create a new CSV file containing any failed records.
+                if (failedRecords != null && failedRecords.Any())
                 {
-                    stringBuilder.AppendLine(
-                        $"{record.Identifier},\"{record.DocumentName}\",\"{record.FileName}\",\"{record.AwardYearRaw}\",{record.FailureReason}");
+                    // Append header row.
+                    sw.WriteLine("Student ID, Document Name, File Name,Award Year,Failure Reason");
+
+                    // Append row per failed record.
+                    foreach (DocumentImportRecord record in failedRecords)
+                    {
+                        sw.WriteLine(
+                            $"{record.Identifier},\"{record.DocumentName}\",\"{record.FileName}\",\"{record.AwardYearRaw}\",{record.FailureReason}");
+                    }
+                }
+                // Otherwise a file with just a message in it.
+                else if (!string.IsNullOrWhiteSpace(failureMessage))
+                {
+                    sw.WriteLine(failureMessage);
                 }
 
-                // Create the file.
-                File.WriteAllText(failureFilePath, stringBuilder.ToString());
-            }
-            // Otherwise a file with just a message in it.
-            else if (!string.IsNullOrWhiteSpace(failureMessage))
-            {
-                File.WriteAllText(failureFilePath, failureMessage);
+                sw.Close();
+                sw.Dispose();
+
             }
         }
+      
     }
 }
