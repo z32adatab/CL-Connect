@@ -10,6 +10,7 @@ using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Models;
 using CsvHelper;
 using Hangfire;
+using log4net;
 using Newtonsoft.Json.Linq;
 
 namespace CampusLogicEvents.Web.Models
@@ -17,6 +18,8 @@ namespace CampusLogicEvents.Web.Models
     public static class DocumentImportService
     {
         public const string Name = "Document Import"; // Used for logging purposes and also to identify the Hangfire recurring job.
+        private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
+
 
         /// <summary>
         /// Checks a specified folder to see if index files are present.  Each index file
@@ -35,6 +38,7 @@ namespace CampusLogicEvents.Web.Models
                 !manager.ValidateDirectory(importSettings.ArchiveDirectory))
             {
                 NotificationService.ErrorNotification(Name, $"{Name} does not authorize read and write updates");
+                logger.Error($"{Name} does not authorize read and write updates");
                 throw new Exception($"{Name} does not authorize read and write updates");
             }
 
