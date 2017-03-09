@@ -21,6 +21,7 @@
         vm.refreshGrid = refreshGrid;
         //vm.createTestIndexFile = createTestIndexFile;
         vm.deleteFieldMappingItem = deleteFieldMappingItem;
+        vm.onIndexFileFormatChange = onIndexFileFormatChange;
 
         vm.fieldMappingCollectionGridOptions = {
             dataSource: vm.service.configurationModel.campusLogicSection.documentSettings.fieldMappingCollection,
@@ -109,6 +110,12 @@
 
         function refreshGrid(){
             $('#field-mapping-collection-grid').data('kendoGrid').dataSource.read();
+        }
+
+        function onIndexFileFormatChange() {
+            if (vm.service.configurationModel.campusLogicSection.documentSettings.indexFileFormat === "xml") {
+                vm.service.configurationModel.campusLogicSection.documentSettings.includeHeaderRecord = false;
+            }
         }
 
         //function createTestIndexFile() {
