@@ -39,7 +39,7 @@
                 </div>
             </div>
         </div>
-        <div class="row padding-bottom-ten">
+        <div class="row padding-bottom-ten" ng-if="vm.service.configurationModel.campusLogicSection.documentSettings.indexFileFormat !== 'xml'">
             <div class="col-md-5" align="right">
                 <label class="control-label">Include Header Record</label>
             </div>
@@ -62,11 +62,12 @@
                 <label class="control-label col-md-5" for="inputIndexFileFormat" align="right">Index File Format</label>
             </div>
             <div class="col-md-4">
-                <select id="inputIndexFileFormat" required kendo-drop-down-list name="indexFileFormat" ng-model="vm.service.configurationModel.campusLogicSection.documentSettings.indexFileFormat">
+                <select id="inputIndexFileFormat" required kendo-drop-down-list name="indexFileFormat" ng-change="vm.onIndexFileFormatChange()" ng-model="vm.service.configurationModel.campusLogicSection.documentSettings.indexFileFormat">
                     <option value="csv">CSV</option>
                     <option value="csvnoquotes">CSV No Quotes</option>
                     <option value="tabdelimited">Tab Delimited</option>
                     <option value="fixedwidth">Fixed Width</option>
+                    <option value="xml">XML</option>
                 </select>
             </div>
         </div>
