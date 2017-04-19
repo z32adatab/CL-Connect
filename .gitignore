@@ -47,3 +47,5 @@ SqlLocalDB.MSI
 Views/Setup/AwardLetter.cshtml
 Views/Setup/EventNotification.cshtml
 Properties/AssemblyInfo.cs
+App_Data/CampusLogic.mdf
+App_Data/CampusLogic_log.ldf
