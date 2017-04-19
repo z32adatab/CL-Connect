@@ -49,4 +49,3 @@ Views/Setup/EventNotification.cshtml
 Properties/AssemblyInfo.cs
 App_Data/CampusLogic.mdf
 App_Data/CampusLogic_log.ldf
-CampusLogicEvents.Web.config.dll
