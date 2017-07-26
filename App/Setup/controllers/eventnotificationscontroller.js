@@ -21,6 +21,7 @@
         vm.eventNotificationTypes = resolveEventNotificationTypes;
         vm.IsCommandEnabled = IsCommandEnabled;
         vm.IsFileStoreEnabled = IsFileStoreEnabled;
+        vm.IsBatchProcessingEnabled = IsBatchProcessingEnabled;
         vm.onConnectionStringTypeChange = onConnectionStringTypeChange;
         vm.removeEventNotification = removeEventNotification;
         vm.testConnectionString = testConnectionString;
@@ -28,10 +29,16 @@
         vm.validationService = validationservice;
         vm.eventNotificationsValid = validationservice.pageValidations.eventNotificationsValid;
         vm.duplicateEvent = false;
+        vm.invalidBatchName = false;
         vm.checkForDuplicateEvent = checkForDuplicateEvent;
+        vm.checkForInvalidBatchName = checkForInvalidBatchName;
         vm.handleMethodChange = handleMethodChange;
 
         onLoad();
+
+        function checkForInvalidBatchName() {
+            vm.invalidBatchName = validationservice.checkForInvalidBatchName();
+        }
 
         function checkForDuplicateEvent() {
             vm.duplicateEvent = validationservice.checkForDuplicateEvent();
@@ -48,6 +55,7 @@
                 dbCommandFieldValue: ''
             });
             checkForDuplicateEvent();
+            checkForInvalidBatchName();
         }
 
         function IsCommandEnabled(index) {
@@ -68,15 +76,28 @@
             return eventNotificationType.isFileStoreTypeRequired;
         }
 
+        function IsBatchProcessingEnabled(index) {
+            var eventNotificationTypeId = vm.eventNotifications[index].handleMethod;
+            if (!eventNotificationTypeId)
+                return false;
+
+            var eventNotificationType = $.grep(vm.eventNotificationTypes, function (e) { return e.eventNotificationTypeId == eventNotificationTypeId; })[0];
+            return eventNotificationType.isBatchProcessingRequired;
+        }
+
         function handleMethodChange(e) {
-            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval' || e.handleMethod === 'Print') {
+            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval' || e.handleMethod === 'Print' || e.handleMethod === 'BatchProcessingAwardLetterPrint' ) {
                 e.dbCommandFieldValue = '';
             }
-            if (e.handleMethod !== 'FileStore' || e.handleMethod !== 'FileStoreAndDocumentRetrieval') {
+            if (e.handleMethod !== 'FileStore' && e.handleMethod !== 'FileStoreAndDocumentRetrieval') {
                 e.fileStoreType = '';
             }
             if (e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval') {
                 e.fileStoreType = 'Shared';
+            }
+            if (e.handleMethod !== 'BatchProcessingAwardLetterPrint') {
+                e.batchName = '';
+                vm.invalidBatchName = false;
             }
         }
 
@@ -96,6 +117,7 @@
                                && eventNotification.handleMethod !== 'FileStore'
                                && eventNotification.handleMethod !== 'FileStoreAndDocumentRetrieval'
                                && eventNotification.handleMethod !== 'AwardLetterPrint'
+                               && eventNotification.handleMethod !== 'BatchProcessingAwardLetterPrint'
                         );
                     }))
                     {
@@ -119,6 +141,7 @@
 
         function onLoad() {
             checkForDuplicateEvent();
+            checkForInvalidBatchName();
             if (vm.clientDatabaseConnection.connectionString.indexOf("DSN") >= 0) {
                 vm.connectionStringType = 'd';
                 var keyValuePairs = vm.clientDatabaseConnection.connectionString.split(';');
@@ -151,6 +174,7 @@
         function removeEventNotification(index) {
             vm.eventNotifications.splice(index, 1);
             checkForDuplicateEvent();
+            checkForInvalidBatchName();
         }
 
         function testConnectionString(form) {

@@ -35,7 +35,8 @@
                 $scope.service.configurationModel.campusLogicSection.documentSettings.documentsEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.storedProceduresEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled = false;
-		        $scope.service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled = false;
+                $scope.service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled = false;
+                $scope.service.configurationModel.campusLogicSection.batchProcessingEnabled = false;
             }
         }
 

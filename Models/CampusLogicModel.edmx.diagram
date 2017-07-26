@@ -22,6 +22,7 @@
         <EntityTypeShape EntityType="CampusLogicEvents.Model.Log" Width="1.5" PointX="1.7350358356419187" PointY="26.778227237415607" />
         <EntityTypeShape EntityType="CampusLogicEvents.Model.NotificationLog" Width="1.5" PointX="3.375" PointY="9.75" />
         <EntityTypeShape EntityType="CampusLogicEvents.Model.EventNotification" Width="1.5" PointX="5.375" PointY="9.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="CampusLogicEvents.Model.BatchProcessRecord" Width="1.5" PointX="7.375" PointY="9.75" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

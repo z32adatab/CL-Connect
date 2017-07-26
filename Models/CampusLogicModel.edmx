@@ -5,6 +5,16 @@
     <!-- SSDL content -->
     <edmx:StorageModels>
     <Schema Namespace="CampusLogicEvents.Model.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="BatchProcessRecord">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Type" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="Name" Type="varchar" MaxLength="25" Nullable="false" />
+          <Property Name="Message" Type="varchar(max)" Nullable="false" />
+          <Property Name="ProcessGuid" Type="uniqueidentifier" />
+        </EntityType>
         <EntityType Name="EventNotification">
           <Key>
             <PropertyRef Name="Id" />
@@ -179,6 +189,7 @@
           </ReferentialConstraint>
         </Association>
         <EntityContainer Name="CampusLogicEventsModelStoreContainer">
+          <EntitySet Name="BatchProcessRecord" EntityType="Self.BatchProcessRecord" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="EventNotification" EntityType="Self.EventNotification" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Log" EntityType="Self.Log" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="NotificationLog" EntityType="Self.NotificationLog" Schema="dbo" store:Type="Tables" />
@@ -231,6 +242,7 @@
           <EntitySet Name="Logs" EntityType="CampusLogicEvents.Model.Log" />
           <EntitySet Name="NotificationLogs" EntityType="CampusLogicEvents.Model.NotificationLog" />
           <EntitySet Name="EventNotifications" EntityType="CampusLogicEvents.Model.EventNotification" />
+          <EntitySet Name="BatchProcessRecords" EntityType="CampusLogicEvents.Model.BatchProcessRecord" />
         </EntityContainer>
         <EntityType Name="AggregatedCounter">
           <Key>
@@ -409,6 +421,16 @@
           <Property Name="CreatedDateTime" Type="DateTime" Nullable="false" Precision="3" />
           <Property Name="ProcessGuid" Type="Guid" />
         </EntityType>
+        <EntityType Name="BatchProcessRecord">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="false" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="25" FixedLength="false" Unicode="false" />
+          <Property Name="Message" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="false" />
+          <Property Name="ProcessGuid" Type="Guid" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -571,6 +593,17 @@
                 <ScalarProperty Name="CreatedDateTime" ColumnName="CreatedDateTime" />
                 <ScalarProperty Name="Message" ColumnName="Message" />
                 <ScalarProperty Name="EventNotificationId" ColumnName="EventNotificationId" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BatchProcessRecords">
+            <EntityTypeMapping TypeName="CampusLogicEvents.Model.BatchProcessRecord">
+              <MappingFragment StoreEntitySet="BatchProcessRecord">
+                <ScalarProperty Name="ProcessGuid" ColumnName="ProcessGuid" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>

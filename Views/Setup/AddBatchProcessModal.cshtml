@@ -1,0 +1,54 @@
+﻿<div class="modal-header"><h4>{{modalType}} {{displayName}} Batch Process</h4></div>
+<div class="modal-body">
+    <form ng-show="typeName == 'awardLetterPrint'">
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">Batch Name</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="batchName" name="batchName" ng-model="modelCopy.batchName" required />
+                <span class="field-validation-error" ng-show="batchNameValidation == true">Required</span>
+                <span class="field-validation-error" ng-show="batchNameDuplicateValidation == true">No two batch processes of the same type may have the same name</span>
+                <span class="field-validation-error" ng-show="batchNameLengthValidation == true">Name cannot be longer than 25 characters</span>
+            </div>
+        </div>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">Max Batch Size</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" id="maxBatchSize" name="maxBatchSize" kendo-numeric-text-box k-format="'n0'" k-min="1" k-max="200" ng-model="modelCopy.maxBatchSize" required />
+                <span class="field-validation-error" ng-show="maxBatchSizeValidation == true">Required</span>
+            </div>
+        </div>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">File Path</label>
+            </div>
+            <div class="col-md-8">
+                <cl-folder-picker isrequired="true" formvalid="validationService.pageValidations.batchProcessingSettingsValid"  uploadpath="modelCopy.filePath"></cl-folder-picker>
+            </div>
+        </div>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">File Name Format</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="fileNameFormat" name="fileNameFormat" ng-model="modelCopy.fileNameFormat" />
+            </div>
+        </div>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">Batch Execution Minutes</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" id="batchExecutionMinutes" name="batchExecutionMinutes" kendo-numeric-text-box k-format="'n0'" k-min="1" ng-model="modelCopy.batchExecutionMinutes" required />
+                <span class="field-validation-error" ng-show="batchExecutionMinutesValidation == true">Required</span>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <input type="button" id="button-field-search-cancel" class="btn btn-default" value="Cancel" ng-click="$dismiss()" />
+    <input type="button" id="button-field-search-save" class="btn btn-primary" value="Save" ng-click="save()" />
+</div>

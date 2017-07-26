@@ -31,10 +31,6 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-<<<<<<< HEAD
-[assembly: AssemblyVersion("2.6.4")]
-=======
-[assembly: AssemblyVersion("2.6.5")]
->>>>>>> refs/remotes/origin/Alicia's-Branch
+[assembly: AssemblyVersion("2.7.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: log4net.Config.XmlConfigurator]

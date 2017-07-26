@@ -65,6 +65,13 @@ namespace CampusLogicEvents.Web.Models
                 {
                     response.AwardLetterPrintSettingsValid = ValidateAwardLetterPrintSettings(configurationModel.CampusLogicSection.AwardLetterPrintSettings).IsSuccessStatusCode;
                 }
+                if (configurationModel.CampusLogicSection.BatchProcessingEnabled ?? false)
+                {
+                    response.BatchProcessingSettingsValid = ValidateBatchProcessingSettings(configurationModel).IsSuccessStatusCode;
+                    var batchNamesDictionary = GetBatchNameLists(configurationModel.CampusLogicSection.EventNotificationsList, configurationModel.CampusLogicSection.BatchProcessingTypesList);
+                    response.InvalidBatchName = !ValidateBatchNames(batchNamesDictionary);
+                    response.MissingBatchName = !ValidateMissingBatchNames(batchNamesDictionary);
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
@@ -72,7 +79,8 @@ namespace CampusLogicEvents.Web.Models
                     || (configurationModel.CampusLogicSection.ISIRCorrectionsSettings.CorrectionsEnabled ?? false)
                     || (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
                     || (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
-                    || (configurationModel.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false))
+                    || (configurationModel.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+                    || (configurationModel.CampusLogicSection.BatchProcessingEnabled ?? false))
                 {
                     response.DuplicatePath = !ValidatePathsUnique(configurationModel);
                 }
@@ -83,7 +91,7 @@ namespace CampusLogicEvents.Web.Models
                 }
 
                 response.DuplicateEvent = !ValidateEventNotificationsUnique(configurationModel.CampusLogicSection.EventNotificationsList);
-                response.ConnectionStringValid = ValidateConnectionStringValid(configurationModel.CampusLogicSection.EventNotificationsList, configurationModel.CampusLogicSection.ClientDatabaseConnection.ConnectionString);
+                response.ConnectionStringValid = ValidateConnectionStringValid(configurationModel.CampusLogicSection.EventNotificationsList, configurationModel.CampusLogicSection.ClientDatabaseConnection.ConnectionString);                
             }
 
             return response;
@@ -123,6 +131,20 @@ namespace CampusLogicEvents.Web.Models
             {
                 pathsToValidate.Add(configuration.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintFilePath);
             }
+            if (configuration.CampusLogicSection.BatchProcessingEnabled ?? false)
+            {
+                var batchProcessingTypes = configuration.CampusLogicSection.BatchProcessingTypesList;
+
+                foreach (var batchProcessingType in batchProcessingTypes)
+                {
+                    var paths = batchProcessingType.BatchProcesses.Select(b => b.FilePath).Distinct();
+
+                    foreach (var path in paths)
+                    {
+                        pathsToValidate.Add(path);
+                    }
+                }
+            }
 
             if (pathsToValidate.Count > 1)
             {
@@ -142,6 +164,78 @@ namespace CampusLogicEvents.Web.Models
             return eventNotifications.Count == eventNotifications.Select(x => x.EventNotificationId).Distinct().Count();
         }
 
+        public static Dictionary<string, List<string>> GetBatchNameLists(IList<EventNotificationHandler> eventNotifications, IList<BatchProcessingTypeDto> batchProcessingTypes)
+        {
+            var eventHandlerBatchNames = new List<string>();
+            var batchProcessNames = new List<string>();
+            var dict = new Dictionary<string, List<string>>();
+                        
+            foreach (var eventNotification in eventNotifications)
+            {
+                if (eventNotification.HandleMethod == "BatchProcessingAwardLetterPrint")
+                {
+                    eventHandlerBatchNames.Add(eventNotification.BatchName);
+                }
+            }
+
+            foreach (var batchProcessingType in batchProcessingTypes)
+            {
+                foreach (var batchProcess in batchProcessingType.BatchProcesses)
+                {
+                    batchProcessNames.Add(batchProcess.BatchName);
+                }
+            }
+
+            dict.Add("event", eventHandlerBatchNames);
+            dict.Add("batch", batchProcessNames);
+
+            return dict;
+        }
+
+        public static bool ValidateMissingBatchNames(Dictionary<string, List<string>> batchNamesDictionary)
+        {
+            var eventHandlerBatchNames = batchNamesDictionary["event"];
+            var batchProcessNames = batchNamesDictionary["batch"];
+
+            // Compare to make sure no batch hasn't been accounted for
+            if (eventHandlerBatchNames.Except(batchProcessNames).Any()) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validating that no batch names are empty
+        /// and that they are all unique (to a given type).
+        /// </summary>
+        /// <param name="eventNotifications"></param>
+        /// <param name="batchProcessingTypes"></param>
+        /// <returns></returns>
+        public static bool ValidateBatchNames(Dictionary<string, List<string>> batchNamesDictionary)
+        {
+            var eventHandlerBatchNames = batchNamesDictionary["event"];
+            var batchProcessNames = batchNamesDictionary["batch"];
+
+            // Check for a blank batch name within the event handlers
+            if (eventHandlerBatchNames.All(x => string.IsNullOrEmpty(x))) return false;
+
+            // Check for duplicate event handler batch names
+            if (eventHandlerBatchNames.GroupBy(x => x).Any(g => g.Count() > 1)) return false;
+
+            // Check for batch name longer than 25 characters
+            if (eventHandlerBatchNames.All(x => x.Length > 25)) return false;
+
+            // Check for a blank batch name within the batch processes
+            if (batchProcessNames.All(x => string.IsNullOrEmpty(x))) return false;
+
+            // Check for duplicate batch process names
+            if (batchProcessNames.GroupBy(x => x).Any(g => g.Count() > 1)) return false;
+
+            // Check for batch name longer than 25 characters
+            if (batchProcessNames.All(x => x.Length > 25)) return false;
+
+            return true;
+        }
+
         /// <summary>
         /// Validating database connection
         /// if the database connection is required
@@ -151,7 +245,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint" };
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint" };
 
             if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
@@ -565,6 +659,46 @@ namespace CampusLogicEvents.Web.Models
             catch (Exception exception)
             {
                 logger.Error(exception);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Validates Batch Processing Settings
+        /// </summary>
+        /// <returns></returns>
+        public static HttpResponseMessage ValidateBatchProcessingSettings(ConfigurationModel configurationModel)
+        {
+            try
+            {
+                var batchProcessingTypes = configurationModel.CampusLogicSection.BatchProcessingTypesList;
+
+                foreach (var batchProcessingType in batchProcessingTypes)
+                {
+                    var paths = batchProcessingType.BatchProcesses.Select(b => b.FilePath);
+
+                    foreach (var path in paths)
+                    {
+                        if (string.IsNullOrEmpty(path))
+                        {
+                            throw new Exception();
+                        }
+                        else
+                        {
+                            FileStoreManager documentManager = new FileStoreManager();
+                            if (!documentManager.ValidateDirectory(path))
+                            {
+                                throw new Exception();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
             }
 

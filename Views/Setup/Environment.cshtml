@@ -74,6 +74,10 @@
                         <input type="checkbox" id="awardLetterPrint" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled, 'awardLetterPrintSettingsValid');" ng-model="service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
                         <label class="k-checkbox-label" for="awardLetterPrint" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables print configuration for Award Letters">Award Letter Print</label>
                     </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="batchProcessing" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.batchProcessingEnabled, 'batchProcessingSettingsValid');" ng-model="service.configurationModel.campusLogicSection.batchProcessingEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
+                        <label class="k-checkbox-label" for="batchProcessing" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables batch processing handling for multiple events">Batch Processing</label>
+                    </div>
                 </div>
             </div>
         </div>

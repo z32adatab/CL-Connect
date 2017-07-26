@@ -20,10 +20,14 @@
         $scope.errorCopying = false;
         $scope.success = false;
         $scope.invalidPages = $scope.validationService.invalidPages;
+        $scope.checkForInvalidBatchName = $scope.validationService.checkForInvalidBatchName;
+        $scope.checkForMissingBatchName = $scope.validationService.checkForMissingBatchName;
         $scope.disableSave = false;
         $scope.fail = false;
         $scope.duplicatePath = false;
         $scope.duplicateEvent = false;
+        $scope.invalidBatchName = false;
+        $scope.missingBatchName = false;
 
         function getActiveStep(path) {
             $scope.activeStep = $location.path();
@@ -78,6 +82,8 @@
                     $scope.validationService.pageValidations = response.data;
                     $scope.duplicatePath = response.data.duplicatePath;
                     $scope.duplicateEvent = response.data.duplicateEvent;
+                    $scope.invalidBatchName = response.data.invalidBatchName;
+                    $scope.missingBatchName = response.data.missingBatchName;
                     $scope.disableSave = false;
                 });
             }
@@ -129,6 +135,9 @@
                     break;
                 case '/awardLetterFileMappingUpload':
                     form = $scope.awardLetterFileMappingUploadForm;
+                    break;
+                case '/batchprocessing':
+                    form = $scope.batchProcessingForm;
                     break;
                 default:
                     return;

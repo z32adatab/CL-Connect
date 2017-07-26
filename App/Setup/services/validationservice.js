@@ -36,11 +36,76 @@
             testFileMappingUploadPath: testFileMappingUpload,
             testDocumentSettings: testDocumentSettings,
             testDocumentImports: testDocumentImports,
+            testBatchProcessingSettings: testBatchProcessingSettings,
             folderPathUnique: folderPathUnique,
             testFolderPath: testFolderPath,
-            checkForDuplicateEvent: checkForDuplicateEvent
-
+            checkForDuplicateEvent: checkForDuplicateEvent,
+            checkForInvalidBatchName: checkForInvalidBatchName,
+            checkForMissingBatchName: checkForMissingBatchName
         };
+
+        function checkForMissingBatchName(currentStep) {
+            var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
+            var batchProcessingTypesList = setupservice.configurationModel.campusLogicSection.batchProcessingTypesList;
+
+            var eventHandlerBatchNames = [];
+            var batchProcessNames = [];
+
+            for (var i = 0; i < eventNotificationsList.length; i++) {
+                eventHandlerBatchNames.push(eventNotificationsList[i].batchName);
+            }
+
+            for (var i = 0; i < batchProcessingTypesList.length; i++) {
+                var batchProcesses = batchProcessingTypesList[i].batchProcesses;
+                for (var j = 0; j < batchProcesses.length; j++) {
+                    batchProcessNames.push(batchProcesses[j].batchName);
+                }
+            }
+
+            // Is the batch process page missing a batch?
+            for (var i = 0; i < eventHandlerBatchNames.length; i++) {
+                if (checkForEmptyOrNullString(eventHandlerBatchNames[i]) && batchProcessNames.indexOf(eventHandlerBatchNames[i]) == -1) {
+                    service.pageValidations.batchProcessingSettingsValid = false;
+                    return true;
+                }
+            }
+
+            service.pageValidations.eventNotificationsValid = true;
+            service.pageValidations.batchProcessingSettingsValid = true;
+
+            return false;
+        }
+
+        function checkForInvalidBatchName() {
+            var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
+
+            // Check for blank batch name
+            for (var i = 0; i < eventNotificationsList.length; i++) {
+                if (eventNotificationsList[i].handleMethod == "BatchProcessingAwardLetterPrint" && (!eventNotificationsList[i].batchName || !eventNotificationsList[i].batchName.length))
+                {
+                    return true;
+                }
+            }
+
+            // Check for duplicate batch name within a type
+            if (eventNotificationsList.length > 1)
+            {
+                for (var i = 0; i < eventNotificationsList.length; i++)
+                {
+                    if (eventNotificationsList[i].handleMethod == "BatchProcessingAwardLetterPrint") {
+                        if (i < eventNotificationsList.length - 1) {
+                            for (var j = i + 1; j < eventNotificationsList.length; j++) {
+                                if (eventNotificationsList[j].handleMethod == "BatchProcessingAwardLetterPrint" && eventNotificationsList[j].batchName == eventNotificationsList[i].batchName) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
 
         function checkForDuplicateEvent() {
             var sorted, i;
@@ -111,11 +176,31 @@
             }
 
             if (setupservice.configurationModel.campusLogicSection.documentImportSettings.enabled)
-            {
-            
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
-            filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
+            {            
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
             }
+
+            if (setupservice.configurationModel.campusLogicSection.batchProcessingEnabled)
+            {
+                var batchProcessingTypesList = setupservice.configurationModel.campusLogicSection.batchProcessingTypesList;
+                var batchFilePaths = [];
+
+                for (var i = 0; i < batchProcessingTypesList.length; i++) {
+                    var batchProcessingType = batchProcessingTypesList[i];
+                    for (var j = 0; j < batchProcessingType.batchProcesses.length; j++) {
+                        var batchProcess = batchProcessingType.batchProcesses[j];
+                        if (batchFilePaths.indexOf(batchProcess.filePath) == -1) {
+                            batchFilePaths.push(batchProcess.filePath);
+                        }
+                    }
+                }
+
+                for (var i = 0; i < batchFilePaths.length; i++) {
+                    filePathValues.push(batchFilePaths[i]);
+                }
+            }
+
             if (uploadpath) {
                 var matches = $.grep(filePathValues, function (filePath) {
                     return uploadpath.toUpperCase() === filePath.toUpperCase();
@@ -134,7 +219,9 @@
                         && page !== 'apiCredentialsTested'
                         && page !== 'eventNotificationsConnectionTested'
                         && page !== 'duplicatePath'
-                        && page !== 'duplicateEvent'));
+                        && page !== 'duplicateEvent'
+                        && page !== 'invalidBatchName'
+                        && page !== 'missingBatchName'));
             });
         }
 
@@ -200,6 +287,9 @@
                 case '/awardLetterPrint':
                     service.testAwardLetterPrintSettings(form);
                     break;
+                case '/batchprocessing':
+                    service.testBatchProcessingSettings(form);
+                    break;
                 default:
                     return;
             }
@@ -238,6 +328,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled) {
                 service.testAwardLetterPrintSettings();
+            }
+            if (setupservice.configurationModel.campusLogicSection.batchProcessingEnabled) {
+                service.testBatchProcessingSettings();
             }
         }
 
@@ -387,7 +480,7 @@
 
         function testEventNotifications(form) {
             service.pageValidations.eventNotificationsConnectionTested = false;
-            if (!service.checkForDuplicateEvent()) {
+            if (!service.checkForDuplicateEvent() && !service.checkForInvalidBatchName()) {
                 service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
                 service.pageValidations.connectionStringValid = true;
                 if ((!form && !service.pageValidations.eventNotificationsConnectionTested) || form.$valid) {
@@ -633,6 +726,29 @@
 
             // Check truthiness of all values.
             service.pageValidations.documentImportsValid = !!(s.enabled && s.frequency && s.fileDirectory && s.archiveDirectory && s.fileExtension);
+        }
+
+        function testBatchProcessingSettings(form) {
+            var batchProcessingTypesList = setupservice.configurationModel.campusLogicSection.batchProcessingTypesList;
+
+            if (batchProcessingTypesList.length === 0) {
+                service.pageValidations.batchProcessingSettingsValid = false;
+            } else {
+                service.pageValidations.batchProcessingSettingsValid = true;
+
+                for (var i = 0; i < batchProcessingTypesList.length; i++) {
+                    var batchProcesses = batchProcessingTypesList[i].batchProcesses;
+                    for (var j = 0; j < batchProcesses.length; j++) {
+                        if (checkForEmptyOrNullString(batchProcesses[j].filePath)) {
+                            service.pageValidations.batchProcessingSettingsValid = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkForEmptyOrNullString(obj) {
+            return !(obj === undefined || obj === null || obj === "");
         }
 
         return service;

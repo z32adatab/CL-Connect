@@ -118,6 +118,11 @@ angular.module('clConnectApp')
                     controller: "documentcontroller",
                     controllerAs: "vm"
                 })
+                .when("/batchprocessing", {
+                    templateUrl: urlRoot + "/setup/batchprocessing",
+                    controller: "batchProcessingController",
+                    controllerAs: "vm"
+                })
                 .otherwise({ redirectTo: "" });
 
             $provide.decorator("$location", ["$delegate", function ($delegate) {

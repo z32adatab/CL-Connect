@@ -219,6 +219,10 @@ namespace CampusLogicEvents.Web.Models
                         {
                             AwardLetterDocumentRetrievalHandler(eventData);
                         }
+                        else if (eventHandler.HandleMethod == "BatchProcessingAwardLetterPrint")
+                        {
+                            BatchProcessRetrievalHandler(ConfigConstants.AwardLetterPrintBatchType, eventHandler.BatchName, eventData);
+                        }
                     }
 
                     //Update the received event with a processed date time
@@ -353,6 +357,21 @@ namespace CampusLogicEvents.Web.Models
         }
 
         /// <summary>
+        /// Used for getting a batch of AL PDFs for printing.
+        /// </summary>
+        /// <param name="eventData"></param>
+        private static void BatchProcessRetrievalHandler(string type, string name, EventNotificationData eventData)
+        {
+            var message = JsonConvert.SerializeObject(eventData).Replace("'", "''");
+
+            using (var dbContext = new CampusLogicContext())
+            {
+                //Insert the event into the BatchProcessRecord table so that it can be processed by the Automated Batch Process job.
+                dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[BatchProcessRecord]([Type], [Name], [Message], [ProcessGuid]) VALUES('{type}', '{name}', '{message}', NULL)");
+            }
+        }
+
+        /// <summary>
         /// Used to get PDF
         /// version of AL 
         /// for printers
@@ -369,7 +388,7 @@ namespace CampusLogicEvents.Web.Models
             }
 
             //Get and Store the Documents
-            manager.GetAwarLetterPdfFile(eventData.AlRecordId.Value, eventData);
+            manager.GetAwardLetterPdfFile(eventData.AlRecordId.Value, eventData);
         }
 
 

@@ -14,6 +14,7 @@ using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
 using log4net;
+using Hangfire.Storage;
 
 [assembly: OwinStartup(typeof(CampusLogicEvents.Web.Startup))]
 
@@ -51,6 +52,7 @@ namespace CampusLogicEvents.Web
             AutomatedISIRCorrectionBatching();
             AutomatedDocumentImportWorker();
             AutomatedFileStoreJob();
+            AutomatedBatchProcessingJob();
         }
 
         /// <summary>
@@ -378,8 +380,6 @@ namespace CampusLogicEvents.Web
 
         }
 
-
-
         /// <summary>
         /// Validates configuration for the document import feature,
         /// then adds a background job if valid.
@@ -451,6 +451,61 @@ namespace CampusLogicEvents.Web
             else
             {
                 RecurringJob.RemoveIfExists(serviceName);
+            }
+        }
+
+        /// <summary>
+        /// Deletes all batch process jobs, but will ensure processes that were updated or altogether deleted do not appear.
+        /// </summary>
+        private void RemoveBatchProcesses()
+        {
+            List<RecurringJobDto> recurringJobs = JobStorage.Current.GetConnection().GetRecurringJobs();
+            List<string> jobIds = new List<string>();
+
+            foreach (var recurringJob in recurringJobs)
+            {
+                jobIds.Add(recurringJob.Id);
+            }
+
+            foreach (var batchProcessingType in campusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes())
+            {
+                var batchJobIds = jobIds.Where(b => b.StartsWith(batchProcessingType.TypeName));
+
+                foreach (var batchJobId in batchJobIds)
+                {
+                    RecurringJob.RemoveIfExists(batchJobId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds background jobs for all batch processes.
+        /// </summary>
+        private void AutomatedBatchProcessingJob()
+        {
+            // Does the BatchProcessRecord table exist? If not, create it.
+            VerifyBatchProcessRecordTableExists();
+
+            RemoveBatchProcesses();
+
+            bool? batchProcessingEnabled = campusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
+
+            if (batchProcessingEnabled == true)
+            {
+                foreach (var batchProcessingType in campusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes())
+                {
+                    var type = batchProcessingType.TypeName;
+
+                    foreach (var batchProcess in batchProcessingType.GetBatchProcesses())
+                    {
+                        var name = batchProcess.BatchName;
+                        var size = batchProcess.MaxBatchSizeAsInt;
+                        var minutes = batchProcess.BatchExecutionMinutes;
+
+                        RecurringJob.AddOrUpdate(string.Format("{0}.{1}", type, name), () => BatchProcessingService.RunBatchProcess(type, name, size),
+                        "*/" + minutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
+                    }
+                }
             }
         }
 
@@ -534,6 +589,32 @@ namespace CampusLogicEvents.Web
                 catch (Exception ex)
                 {
                     logger.Error($"There was an issue with validating and/or creating the EventNotification table in LocalDB: {ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the BatchProcessRecord table exists in LocalDB and if it doesn't, creates it.
+        /// </summary>
+        private static void VerifyBatchProcessRecordTableExists()
+        {
+            using (var dbContext = new CampusLogicContext())
+            {
+                try
+                {
+                    dbContext.Database.ExecuteSqlCommand(
+                        "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[BatchProcessRecord]'))" +
+                        "BEGIN CREATE TABLE[dbo].[BatchProcessRecord]" +
+                        "([Id] INT IDENTITY NOT NULL PRIMARY KEY" +
+                        ",[Type] VARCHAR(200) NOT NULL" +
+                        ",[Name] VARCHAR(25) NOT NULL" +
+                        ",[Message] VARCHAR(MAX) NOT NULL" +
+                        ",[ProcessGuid] UNIQUEIDENTIFIER NULL)" +
+                        "CREATE INDEX ProcessGuid_Event ON [dbo].[BatchProcessRecord] ([ProcessGuid]) END");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"There was an issue with validating and/or creating the BatchProcessRecord table in LocalDB: {ex}");
                 }
             }
         }

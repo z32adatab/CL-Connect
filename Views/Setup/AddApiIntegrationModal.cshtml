@@ -1,0 +1,17 @@
+﻿<div class="modal-header"><h4>{{modalType}} API Integration</h4></div>
+<div class="modal-body">
+    <form>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">API Name</label>
+            </div>
+            <div class="col-md-8">
+                <input type="text" class="form-control" id="apiName" name="apiName" ng-model="modelCopy.apiName" required />
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <input type="button" id="button-field-search-cancel" class="btn btn-default" value="Cancel" ng-click="$dismiss()" />
+    <input type="button" id="button-field-search-save" class="btn btn-primary" value="Save" ng-click="save()" />
+</div>

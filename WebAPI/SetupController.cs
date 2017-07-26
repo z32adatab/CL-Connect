@@ -80,12 +80,18 @@ namespace CampusLogicEvents.Web.WebAPI
                                                                             || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
                                                                             || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
                                                                             || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
-                                                                            || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false);
+                                                                            || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+                                                                            || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false);
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =
                     response.CampusLogicSection.StoredProcedures.GetStoredProcedures()
                         .Select(sp => new StoredProcedureDto(sp.Name, sp.GetParameters().ToList()))
+                        .ToList();
+                response.CampusLogicSection.BatchProcessingEnabled = response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
+                response.CampusLogicSection.BatchProcessingTypesList =
+                    response.CampusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes()
+                        .Select(b => new BatchProcessingTypeDto(b.TypeName, b.GetBatchProcesses().ToList()))
                         .ToList();
 
                 if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
@@ -187,7 +193,33 @@ namespace CampusLogicEvents.Web.WebAPI
 
                     campusLogicSection.StoredProcedures.Add(storedProcedureElement);
                 }
+                
+                campusLogicSection.BatchProcessingTypes = configurationModel.CampusLogicSection.BatchProcessingTypes;
+                campusLogicSection.BatchProcessingTypes.BatchProcessingEnabled = configurationModel.CampusLogicSection.BatchProcessingEnabled;
+                foreach (BatchProcessingTypeDto batchProcessingType in configurationModel.CampusLogicSection.BatchProcessingTypesList)
+                {
+                    BatchProcessingTypeElement batchProcessingTypeElement = new BatchProcessingTypeElement();
+                    batchProcessingTypeElement.TypeName = batchProcessingType.TypeName;
+                    
+                    foreach (BatchProcessDto batchProcess in batchProcessingType.BatchProcesses)
+                    {
+                        var batchProcessElement = new BatchProcessElement();
+                        batchProcessElement.BatchName = batchProcess.BatchName;
 
+                        if (batchProcessingTypeElement.TypeName == ConfigConstants.AwardLetterPrintBatchType)
+                        {
+                            batchProcessElement.MaxBatchSize = batchProcess.MaxBatchSize;
+                            batchProcessElement.FilePath = batchProcess.FilePath;
+                            batchProcessElement.FileNameFormat = batchProcess.FileNameFormat;
+                            batchProcessElement.BatchExecutionMinutes = batchProcess.BatchExecutionMinutes;
+                        }
+
+                        batchProcessingTypeElement.Add(batchProcessElement);
+                    }
+
+                    campusLogicSection.BatchProcessingTypes.Add(batchProcessingTypeElement);
+                }
+                
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;
@@ -276,7 +308,9 @@ namespace CampusLogicEvents.Web.WebAPI
                     StoredProcedureValid = true,
                     DuplicatePath = false,
                     DuplicateEvent = false,
+                    InvalidBatchName = false,
                     FileMappingUploadValid = true,
+                    BatchProcessingSettingsValid = true,
                 };
                 return Request.CreateResponse(HttpStatusCode.OK, newConfigurationValidationModel);
             }
@@ -337,8 +371,11 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.DocumentSettingsValid != null && (bool)!response.DocumentSettingsValid)
                     || (response.FileStoreSettingsValid != null && (bool)!response.FileStoreSettingsValid)
                     || (response.AwardLetterPrintSettingsValid != null && (bool)!response.AwardLetterPrintSettingsValid)
+                    || (response.BatchProcessingSettingsValid != null && (bool)!response.BatchProcessingSettingsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
-                    || !response.ApiCredentialsValid)
+                    || !response.ApiCredentialsValid
+                    || response.InvalidBatchName
+                    || response.MissingBatchName)
                 {
                     return Request.CreateResponse(HttpStatusCode.ExpectationFailed, response);
                 }
