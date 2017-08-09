@@ -37,12 +37,46 @@
             testDocumentSettings: testDocumentSettings,
             testDocumentImports: testDocumentImports,
             testBatchProcessingSettings: testBatchProcessingSettings,
+            testApiIntegrations: testApiIntegrations,
             folderPathUnique: folderPathUnique,
             testFolderPath: testFolderPath,
             checkForDuplicateEvent: checkForDuplicateEvent,
             checkForInvalidBatchName: checkForInvalidBatchName,
-            checkForMissingBatchName: checkForMissingBatchName
+            hasInvalidApiEndpointName: hasInvalidApiEndpointName,
+            checkForMissingBatchName: checkForMissingBatchName,
+            hasMissingApiEndpointName: hasMissingApiEndpointName
         };
+
+        function hasMissingApiEndpointName(currentStep) {            
+            var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
+            var apiEndpointsList = setupservice.configurationModel.campusLogicSection.apiEndpointsList;
+
+            var eventNotificationApiEndpointNames = [];
+            var apiEndpointNames = [];
+
+            for (var i = 0; i < eventNotificationsList.length; i++) {
+                var apiEndpointName = eventNotificationsList[i].apiEndpointName;
+                if (apiEndpointName) {                    
+                    eventNotificationApiEndpointNames.push(apiEndpointName);
+                }
+            }
+
+            for (var i = 0; i < apiEndpointsList.length; i++) {
+                if (apiEndpointsList[i].name) {
+                    apiEndpointNames.push(apiEndpointsList[i].name);
+                }
+            }
+
+            // Is API Integrations missing an endpoint?
+            for (var i = 0; i < eventNotificationApiEndpointNames.length; i++) {
+                if (apiEndpointNames.indexOf(eventNotificationApiEndpointNames[i]) == -1) {
+                    service.pageValidations.apiIntegrationsValid = false;
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         function checkForMissingBatchName(currentStep) {
             var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
@@ -70,9 +104,6 @@
                 }
             }
 
-            service.pageValidations.eventNotificationsValid = true;
-            service.pageValidations.batchProcessingSettingsValid = true;
-
             return false;
         }
 
@@ -96,6 +127,34 @@
                         if (i < eventNotificationsList.length - 1) {
                             for (var j = i + 1; j < eventNotificationsList.length; j++) {
                                 if (eventNotificationsList[j].handleMethod == "BatchProcessingAwardLetterPrint" && eventNotificationsList[j].batchName == eventNotificationsList[i].batchName) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function hasInvalidApiEndpointName() {
+            var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
+            
+            // Check for blank API Endpoint Name
+            for (var i = 0; i < eventNotificationsList.length; i++) {
+                if (eventNotificationsList[i].handleMethod == "ApiIntegration" && (!eventNotificationsList[i].apiEndpointName || !eventNotificationsList[i].apiEndpointName.length)) {
+                    return true;
+                }
+            }
+
+            // Check for duplicate API Endpoint Name
+            if (eventNotificationsList.length > 1) {
+                for (var i = 0; i < eventNotificationsList.length; i++) {
+                    if (eventNotificationsList[i].handleMethod == "ApiIntegration") {
+                        if (i < eventNotificationsList.length - 1) {
+                            for (var j = i + 1; j < eventNotificationsList.length; j++) {
+                                if (eventNotificationsList[j].handleMethod == "ApiIntegration" && eventNotificationsList[j].apiEndpointName == eventNotificationsList[i].apiEndpointName) {
                                     return true;
                                 }
                             }
@@ -221,7 +280,9 @@
                         && page !== 'duplicatePath'
                         && page !== 'duplicateEvent'
                         && page !== 'invalidBatchName'
-                        && page !== 'missingBatchName'));
+                        && page !== 'missingBatchName'
+                        && page !== 'invalidApiEndpointName'
+                        && page !== 'missingApiEndpointName'));
             });
         }
 
@@ -290,6 +351,9 @@
                 case '/batchprocessing':
                     service.testBatchProcessingSettings(form);
                     break;
+                case '/apiintegration':
+                    service.testApiIntegrations(form);
+                    break;
                 default:
                     return;
             }
@@ -331,6 +395,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.batchProcessingEnabled) {
                 service.testBatchProcessingSettings();
+            }
+            if (setupservice.configurationModel.campusLogicSection.apiIntegrationsEnabled) {
+                service.testApiIntegrations();
             }
         }
 
@@ -480,7 +547,7 @@
 
         function testEventNotifications(form) {
             service.pageValidations.eventNotificationsConnectionTested = false;
-            if (!service.checkForDuplicateEvent() && !service.checkForInvalidBatchName()) {
+            if (!service.checkForDuplicateEvent() && !service.checkForInvalidBatchName() && !service.hasInvalidApiEndpointName()) {
                 service.pageValidations.eventNotificationsValid = form ? form.$valid : service.pageValidations.eventNotificationsValid;
                 service.pageValidations.connectionStringValid = true;
                 if ((!form && !service.pageValidations.eventNotificationsConnectionTested) || form.$valid) {
@@ -736,12 +803,72 @@
             } else {
                 service.pageValidations.batchProcessingSettingsValid = true;
 
+                var filePaths = [];
+
                 for (var i = 0; i < batchProcessingTypesList.length; i++) {
                     var batchProcesses = batchProcessingTypesList[i].batchProcesses;
-                    for (var j = 0; j < batchProcesses.length; j++) {
-                        if (checkForEmptyOrNullString(batchProcesses[j].filePath)) {
-                            service.pageValidations.batchProcessingSettingsValid = false;
+
+                    if (batchProcesses.length > 0) {
+                        var filePathsForBatchType = [];
+
+                        for (var j = 0; j < batchProcesses.length; j++) {
+                            if (!checkForEmptyOrNullString(batchProcesses[j].filePath)) {
+                                service.pageValidations.batchProcessingSettingsValid = false;
+                                return;
+                            } else {
+                                // Get unique file path within type
+                                if (filePathsForBatchType.indexOf(batchProcesses[j].filePath == -1)) {
+                                    filePathsForBatchType.push(batchProcesses[j].filePath);
+                                }
+                            }
+
+                            // Add all unique paths to list of all batch file paths
+                            for (var k = 0; k < filePathsForBatchType.length; k++) {
+                                filePaths.push(filePathsForBatchType[k]);
+                            }
                         }
+                    } else {
+                        service.pageValidations.batchProcessingSettingsValid = false;
+                        return;
+                    }
+                }
+
+                // Test if paths are unique across batch types and other integrations
+                for (var i = 0; i < filePaths.length; i++) {
+                    if (service.testFolderPath(filePaths[i])) {
+                        service.testReadWritePermissions.get({ directoryPath: filePaths[i] }, function (response) {
+                        }, function (error) {
+                            service.pageValidations.batchProcessingSettingsValid = false;
+                            return;
+                        });
+                    } else {
+                        service.pageValidations.batchProcessingSettingsValid = false;
+                        return;
+                    }
+                }
+            }
+        }
+
+        function getEndpointsForApi(id, endpoints) {
+            return $.grep(endpoints, function (endpoint) {
+                return endpoint.apiId === id;
+            });
+        }
+
+        function testApiIntegrations(form) {
+            var apiIntegrationsList = setupservice.configurationModel.campusLogicSection.apiIntegrationsList;
+            var apiEndpointsList = setupservice.configurationModel.campusLogicSection.apiEndpointsList;
+
+            // Ensure there is at least one API Integration
+            if (apiIntegrationsList.length === 0) {
+                service.pageValidations.apiIntegrationsValid = false;
+            } else {
+                service.pageValidations.apiIntegrationsValid = true;
+
+                // Ensure each API Integration has at least one endpoint
+                for (var i = 0; i < apiIntegrationsList.length; i++) {
+                    if (getEndpointsForApi(apiIntegrationsList[i].apiId, apiEndpointsList).length === 0) {
+                        service.pageValidations.apiIntegrationsValid = false;
                     }
                 }
             }

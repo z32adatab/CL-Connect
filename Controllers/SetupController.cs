@@ -166,6 +166,16 @@ namespace CampusLogicEvents.Web.Controllers
             return PartialView();
         }
 
+        public ActionResult ApiIntegration()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
         /// <summary>
         /// Gets the template with the specified name.
         /// </summary>

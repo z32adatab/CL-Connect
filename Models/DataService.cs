@@ -11,6 +11,13 @@ using Hangfire;
 using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System.Collections.Specialized;
+using System.Web;
+using System.Text;
+using System.Net;
+using System.Net.Http.Headers;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -223,6 +230,10 @@ namespace CampusLogicEvents.Web.Models
                         {
                             BatchProcessRetrievalHandler(ConfigConstants.AwardLetterPrintBatchType, eventHandler.BatchName, eventData);
                         }
+                        else if (eventHandler.HandleMethod == "ApiIntegration")
+                        {
+                            ApiIntegrationsHandler(eventHandler.ApiEndpointName, eventData);
+                        }
                     }
 
                     //Update the received event with a processed date time
@@ -409,6 +420,196 @@ namespace CampusLogicEvents.Web.Models
             catch (Exception ex)
             {
                 logger.Error($"An error occured when attempting to handle the event data for file store: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// Converts a collection of parameters and their values into HttpContent.
+        /// </summary>
+        /// <param name="eventParams"></param>
+        /// <param name="mimeType"></param>
+        /// <returns></returns>
+        private static StringContent GetHttpContent(NameValueCollection eventParams, string mimeType)
+        {
+            var dict = eventParams.AllKeys.ToDictionary(k => k, k => eventParams[k]);
+            var jsonString = JsonConvert.SerializeObject(dict);
+            return new StringContent(jsonString, Encoding.UTF8, mimeType);
+        }
+
+        /// <summary>
+        /// Retrieves an access token via OAuth 2.0 protocol.
+        /// </summary>
+        /// <param name="apiIntegration"></param>
+        /// <returns></returns>
+        private static async Task<string> GetOauth2TokenAsync(ApiIntegrationElement apiIntegration)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                        Convert.ToBase64String(
+                            Encoding.ASCII.GetBytes(
+                                string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
+                    
+                    var body = "grant_type=client_credentials";
+
+                    StringContent theContent = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                    HttpResponseMessage response = await httpClient.PostAsync(new Uri(apiIntegration.TokenService), theContent).ConfigureAwait(false);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseJson = await response.Content.ReadAsStringAsync();
+                        return (string)JObject.Parse(responseJson)["access_token"];
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid response");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.ErrorFormat("DataService GetOauth2TokenAsync Error: {0}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves an access token via OAuth WRAP protocol.
+        /// </summary>
+        /// <param name="apiIntegration"></param>
+        /// <returns></returns>
+        private static async Task<string> GetOauthWrapTokenAsync(ApiIntegrationElement apiIntegration)
+        {
+            try
+            {
+                // Make the Web API call
+                using (var client = new HttpClient())
+                {
+                    // Build the form body that will be posted
+                    var body = string.Format("wrap_name={0}&wrap_password={1}&wrap_scope={2}",
+                        HttpUtility.UrlEncode(apiIntegration.Username),
+                        HttpUtility.UrlEncode(apiIntegration.Password),
+                        apiIntegration.Root);
+
+                    StringContent theContent = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                    // Call the API and post the form data to request the token
+                    HttpResponseMessage response = await client.PostAsync(new Uri(apiIntegration.TokenService), theContent).ConfigureAwait(false);  //ConfigureAwait is required when use with ASP.NET because of SynchronizationContext.
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Pull the content of the response, decode the response, strip off certain parts of the access token and return just the token part for use
+                        var accessToken = await response.Content.ReadAsStringAsync();
+                        var wrapAccessPart = HttpUtility.UrlDecode(accessToken).Split('&').FirstOrDefault(x => x.Contains("wrap_access_token_expires_in"));
+                        return HttpUtility.UrlDecode(accessToken).Replace("wrap_access_token=", string.Empty).Replace("&" + wrapAccessPart, string.Empty);
+                    }
+                    else
+                    {
+                        // Handle invalid responses here
+                        throw new Exception("Invalid Response.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.ErrorFormat("DataService GetOauthWrapTokenAsync Error: {0}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Handles an HTTP request for an endpoint.
+        /// </summary>
+        /// <param name="endpointName"></param>
+        /// <param name="eventData"></param>
+        private static void ApiIntegrationsHandler(string endpointName, EventNotificationData eventData)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var apiEndpoint = campusLogicConfigSection.ApiEndpoints.GetEndpoints().Where(e => e.Name == endpointName).FirstOrDefault();
+                    if (apiEndpoint == null)
+                    {
+                        throw new Exception("Invalid API Endpoint");
+                    }
+
+                    var apiIntegration = campusLogicConfigSection.ApiIntegrations.GetApiIntegrations().Where(a => a.ApiId == apiEndpoint.ApiId).FirstOrDefault();
+                    if (apiIntegration == null)
+                    {
+                        throw new Exception("Invalid API Integration");
+                    }
+
+                    httpClient.BaseAddress = new Uri(apiIntegration.Root);
+                    
+                    var authType = apiIntegration.Authentication;
+                    switch (authType)
+                    {
+                        case ConfigConstants.Basic:
+                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", 
+                                Convert.ToBase64String(
+                                    Encoding.ASCII.GetBytes(
+                                        string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
+                            break;
+                        case ConfigConstants.OAuth2:
+                            var oauth2Token = GetOauth2TokenAsync(apiIntegration).Result;
+                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("OAuth2", oauth2Token);
+                            break;
+                        case ConfigConstants.OAuth_WRAP:
+                            var oauthwrapToken = GetOauthWrapTokenAsync(apiIntegration).Result;
+                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("WRAP", "access_token=\"" + oauthwrapToken + "\"");
+                            break;
+                        default:
+                            break;
+                    }            
+
+                    // use the eventdata and its values to link up to the endpoint's parameters
+                    var parameterMappings = JArray.Parse(apiEndpoint.ParameterMappings);
+                    var eventPropertyValues = new EventPropertyValues(eventData);
+                    NameValueCollection eventParams = new NameValueCollection();
+
+                    // foreach mapping, get event property, find its corresponding eventdata, get that eventdata's value, attach it to the parameter in mapping
+                    foreach (JObject mapping in parameterMappings)
+                    {
+                        var eventValue = eventPropertyValues.GetType().GetProperty(mapping.Value<string>("eventData")).GetValue(eventPropertyValues, null);
+                        eventParams.Add(mapping.Value<string>("parameter"), eventValue.ToString());
+                    }
+
+                    HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+
+                    var endpoint = apiEndpoint.Endpoint;
+
+                    switch (apiEndpoint.Method)
+                    {
+                        case WebRequestMethods.Http.Get:
+                            var array = (from key in eventParams.AllKeys
+                                         from value in eventParams.GetValues(key)
+                                         select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value))).ToArray();
+                            endpoint += "?" + string.Join("&", array);
+                            response = httpClient.GetAsync(endpoint).Result;
+                            break;
+                        case WebRequestMethods.Http.Post:
+                            response = httpClient.PostAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;
+                            break;
+                        case WebRequestMethods.Http.Put:
+                            response = httpClient.PutAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception("Invalid response");
+                    }
+                }                              
+            }
+            catch (Exception e)
+            {
+                logger.ErrorFormat("DataService ApiIntegrationsHandler Error: {0}", e);
+                throw;
             }
         }
 

@@ -22,12 +22,15 @@
         $scope.invalidPages = $scope.validationService.invalidPages;
         $scope.checkForInvalidBatchName = $scope.validationService.checkForInvalidBatchName;
         $scope.checkForMissingBatchName = $scope.validationService.checkForMissingBatchName;
+        $scope.hasInvalidApiEndpointName = $scope.validationService.hasInvalidApiEndpointName;
+        $scope.hasMissingApiEndpointName = $scope.validationService.hasMissingApiEndpointName;
         $scope.disableSave = false;
         $scope.fail = false;
         $scope.duplicatePath = false;
         $scope.duplicateEvent = false;
         $scope.invalidBatchName = false;
         $scope.missingBatchName = false;
+        $scope.missingApiEndpointName = false;
 
         function getActiveStep(path) {
             $scope.activeStep = $location.path();
@@ -84,6 +87,7 @@
                     $scope.duplicateEvent = response.data.duplicateEvent;
                     $scope.invalidBatchName = response.data.invalidBatchName;
                     $scope.missingBatchName = response.data.missingBatchName;
+                    $scope.missingApiEndpointName = response.data.missingApiEndpointName;
                     $scope.disableSave = false;
                 });
             }
@@ -138,6 +142,9 @@
                     break;
                 case '/batchprocessing':
                     form = $scope.batchProcessingForm;
+                    break;
+                case '/apiintegration':
+                    form = $scope.apiIntegrationForm;
                     break;
                 default:
                     return;

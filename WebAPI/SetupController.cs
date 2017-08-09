@@ -2,6 +2,7 @@
 using CampusLogicEvents.Implementation.Models;
 using CampusLogicEvents.Web.Models;
 using log4net;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -81,18 +82,24 @@ namespace CampusLogicEvents.Web.WebAPI
                                                                             || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
                                                                             || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
                                                                             || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
-                                                                            || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false);
+                                                                            || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
+                                                                            || (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false);
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =
                     response.CampusLogicSection.StoredProcedures.GetStoredProcedures()
                         .Select(sp => new StoredProcedureDto(sp.Name, sp.GetParameters().ToList()))
                         .ToList();
+
                 response.CampusLogicSection.BatchProcessingEnabled = response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
                 response.CampusLogicSection.BatchProcessingTypesList =
                     response.CampusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes()
                         .Select(b => new BatchProcessingTypeDto(b.TypeName, b.GetBatchProcesses().ToList()))
                         .ToList();
+
+                response.CampusLogicSection.ApiIntegrationsEnabled = response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled;
+                response.CampusLogicSection.ApiIntegrationsList = response.CampusLogicSection.ApiIntegrations.GetApiIntegrations().Select(a => new ApiIntegrationDto(a)).ToList();
+                response.CampusLogicSection.ApiEndpointsList = response.CampusLogicSection.ApiEndpoints.GetEndpoints().Select(e => new ApiIntegrationEndpointDto(e)).ToList();
 
                 if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
                 {
@@ -219,6 +226,36 @@ namespace CampusLogicEvents.Web.WebAPI
 
                     campusLogicSection.BatchProcessingTypes.Add(batchProcessingTypeElement);
                 }
+
+                campusLogicSection.ApiIntegrations = configurationModel.CampusLogicSection.ApiIntegrations;
+                campusLogicSection.ApiIntegrations.ApiIntegrationsEnabled = configurationModel.CampusLogicSection.ApiIntegrationsEnabled;
+                foreach (ApiIntegrationDto apiIntegration in configurationModel.CampusLogicSection.ApiIntegrationsList)
+                {
+                    ApiIntegrationElement apiIntegrationElement = new ApiIntegrationElement();
+                    apiIntegrationElement.ApiId = apiIntegration.ApiId;
+                    apiIntegrationElement.ApiName = apiIntegration.ApiName;
+                    apiIntegrationElement.Authentication = apiIntegration.Authentication;
+                    apiIntegrationElement.TokenService = apiIntegration.TokenService;
+                    apiIntegrationElement.Root = apiIntegration.Root;
+                    apiIntegrationElement.Username = apiIntegration.Username;
+                    apiIntegrationElement.Password = apiIntegration.Password;
+
+                    campusLogicSection.ApiIntegrations.Add(apiIntegrationElement);
+                }
+
+                campusLogicSection.ApiEndpoints = configurationModel.CampusLogicSection.ApiEndpoints;
+                foreach (ApiIntegrationEndpointDto apiEndpoint in configurationModel.CampusLogicSection.ApiEndpointsList)
+                {
+                    ApiIntegrationEndpointElement endpointElement = new ApiIntegrationEndpointElement();
+                    endpointElement.Name = apiEndpoint.Name;
+                    endpointElement.Endpoint = apiEndpoint.Endpoint;
+                    endpointElement.ApiId = apiEndpoint.ApiId;
+                    endpointElement.Method = apiEndpoint.Method;
+                    endpointElement.MimeType = apiEndpoint.MimeType;
+                    endpointElement.ParameterMappings = JArray.Parse(apiEndpoint.ParameterMappings).ToString();
+
+                    campusLogicSection.ApiEndpoints.Add(endpointElement);
+                }
                 
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
@@ -311,6 +348,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     InvalidBatchName = false,
                     FileMappingUploadValid = true,
                     BatchProcessingSettingsValid = true,
+                    ApiIntegrationsValid = true
                 };
                 return Request.CreateResponse(HttpStatusCode.OK, newConfigurationValidationModel);
             }
@@ -372,10 +410,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.FileStoreSettingsValid != null && (bool)!response.FileStoreSettingsValid)
                     || (response.AwardLetterPrintSettingsValid != null && (bool)!response.AwardLetterPrintSettingsValid)
                     || (response.BatchProcessingSettingsValid != null && (bool)!response.BatchProcessingSettingsValid)
+                    || (response.ApiIntegrationsValid != null && (bool)!response.ApiIntegrationsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
                     || !response.ApiCredentialsValid
                     || response.InvalidBatchName
-                    || response.MissingBatchName)
+                    || response.MissingBatchName
+                    || response.MissingApiEndpointName)
                 {
                     return Request.CreateResponse(HttpStatusCode.ExpectationFailed, response);
                 }

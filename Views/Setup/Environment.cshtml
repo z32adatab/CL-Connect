@@ -78,6 +78,10 @@
                         <input type="checkbox" id="batchProcessing" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.batchProcessingEnabled, 'batchProcessingSettingsValid');" ng-model="service.configurationModel.campusLogicSection.batchProcessingEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
                         <label class="k-checkbox-label" for="batchProcessing" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables batch processing handling for multiple events">Batch Processing</label>
                     </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="apiIntegration" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.apiIntegrationsEnabled, 'apiIntegrationsValid');" ng-model="service.configurationModel.campusLogicSection.apiIntegrationsEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <label class="k-checkbox-label" for="apiIntegration" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables API integration">API Integration</label>
+                    </div>
                 </div>
             </div>
         </div>

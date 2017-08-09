@@ -26,7 +26,7 @@
             filePath: '',
             fileNameFormat: '',
             batchExecutionMinutes: 0
-        }
+        };
 
         $scope.gridOptions = [];
         
@@ -50,7 +50,7 @@
         $scope.model = {
             typeName: null,
             batchProcesses: []
-        }
+        };
         $scope.bpvalidation = false;
 
         function onLoad() {
@@ -105,8 +105,8 @@
             $scope.batchProcessingTypesList.push({
                 typeName: $scope.model.batchProcessingType,
                 batchProcesses: []
-            })
-        }
+            });
+        };
 
         $scope.deleteBatchProcessingType = function (batchProcessingType) {
             for (var i = 0; i < $scope.batchProcessingTypesList.length; i++) {
@@ -115,6 +115,6 @@
                     return;
                 }
             }
-        }
+        };
     }
 })();

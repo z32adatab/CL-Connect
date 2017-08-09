@@ -81,7 +81,7 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                         }
 
                         var batchNameMatches = $.grep($scope.theList, function (batchProcess) {
-                            return (batchProcess.batchName === $scope.modelCopy.batchName && batchProcess.index !== $scope.modelCopy.index);
+                            return batchProcess.batchName === $scope.modelCopy.batchName && batchProcess.index !== $scope.modelCopy.index;
                         });
 
                         if (batchNameMatches.length > 0) {

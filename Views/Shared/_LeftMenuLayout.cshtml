@@ -107,6 +107,11 @@
                                         Batch Processing<i ng-if="!validationService.pageValidations.batchProcessingSettingsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
                                     </a>
                                 </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.apiIntegrationsEnabled" ng-class="getActiveStep('/apiintegration')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/apiintegration" ng-click="validateStep();">
+                                        API Integration<i ng-if="!validationService.pageValidations.apiIntegrationsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
                                 <li ng-class="getActiveStep('/saveConfigurations')">
                                     <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/saveConfigurations" ng-click="validationService.validateAllSteps();">Save Configurations</a>
                                 </li>
@@ -155,6 +160,18 @@
                             <p class="important-color">
                                 <b>A batch process is missing.</b> <br />
                                 <b>Please check Event Notifications and Batch Processing to ensure both have that batch.</b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="(invalidApiEndpointName || hasInvalidApiEndpointName()) && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>An API Endpoint name is incorrect.</b> <br />
+                                <b>Please ensure API Endpoint names are unique and not blank.</b>
+                            </p>
+                        </div>
+                        <div class="col-md-12" ng-if="(missingApiEndpointName || hasMissingApiEndpointName()) && activeStep === '/saveConfigurations'">
+                            <p class="important-color">
+                                <b>An API Endpoint is missing.</b> <br />
+                                <b>Please check Event Notifications and API Integration to ensure both have that endpoint.</b>
                             </p>
                         </div>
                         <div class="col-md-12" ng-if="errorCopying && activeStep === '/saveConfigurations'">

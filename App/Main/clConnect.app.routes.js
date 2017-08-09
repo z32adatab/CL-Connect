@@ -123,6 +123,11 @@ angular.module('clConnectApp')
                     controller: "batchProcessingController",
                     controllerAs: "vm"
                 })
+                .when("/apiintegration", {
+                    templateUrl: urlRoot + "/setup/apiintegration",
+                    controller: "apiIntegrationController",
+                    controllerAs: "vm"
+                })
                 .otherwise({ redirectTo: "" });
 
             $provide.decorator("$location", ["$delegate", function ($delegate) {

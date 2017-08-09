@@ -48,10 +48,12 @@
                 <div class="col-md-12">
                     <button class="btn btn-default" ng-click="addBatchProcess(batchProcessingType)">Add</button>
                 </div>
+                <div class="col-md-12 padding-top-ten">
+                    <span class="field-validation-error" ng-show="batchProcessingType.batchProcesses.length === 0 && !pageValid">At least one batch process is required.</span>
+                </div>
             </div>
         </div>
     </div>
-    <span class="field-validation-error" ng-show="batchProcessingList.length === 0 && !pageValid">At least one batch process is required.</span>
 </div>
 
 <script id="add-batch-process-collection-template" type="text/x-kendo-template">

@@ -72,6 +72,12 @@ namespace CampusLogicEvents.Web.Models
                     response.InvalidBatchName = !ValidateBatchNames(batchNamesDictionary);
                     response.MissingBatchName = !ValidateMissingBatchNames(batchNamesDictionary);
                 }
+                if (configurationModel.CampusLogicSection.ApiIntegrationsEnabled ?? false)
+                {
+                    response.ApiIntegrationsValid = ValidateApiIntegrations(configurationModel).IsSuccessStatusCode;
+                    var dictionary = GetApiEndpointNameLists(configurationModel.CampusLogicSection.EventNotificationsList, configurationModel.CampusLogicSection.ApiEndpointsList);
+                    response.MissingApiEndpointName = !ValidateMissingApiEndpointNames(dictionary);
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
@@ -164,6 +170,41 @@ namespace CampusLogicEvents.Web.Models
             return eventNotifications.Count == eventNotifications.Select(x => x.EventNotificationId).Distinct().Count();
         }
 
+        public static Dictionary<string, List<string>> GetApiEndpointNameLists(IList<EventNotificationHandler> eventNotifications, IList<ApiIntegrationEndpointDto> apiEndpoints)
+        {
+            var eventNotificationApiEndpointNames = new List<string>();
+            var apiEndpointNames = new List<string>();
+            var dict = new Dictionary<string, List<string>>();
+
+            foreach (var eventNotification in eventNotifications)
+            {
+                if (eventNotification.HandleMethod == "ApiIntegration")
+                {
+                    eventNotificationApiEndpointNames.Add(eventNotification.ApiEndpointName);
+                }
+            }
+
+            foreach (var apiEndpoint in apiEndpoints)
+            {
+                apiEndpointNames.Add(apiEndpoint.Name);
+            }
+
+            dict.Add("event", eventNotificationApiEndpointNames);
+            dict.Add("endpoint", apiEndpointNames);
+
+            return dict;
+        }
+
+        public static bool ValidateMissingApiEndpointNames(Dictionary<string, List<string>> apiEndpointNamesDictionary)
+        {
+            var eventNotificationApiEndpointNames = apiEndpointNamesDictionary["event"];
+            var apiEndpointNames = apiEndpointNamesDictionary["endpoint"];
+
+            if (eventNotificationApiEndpointNames.Except(apiEndpointNames).Any()) return false;
+
+            return true;
+        }
+
         public static Dictionary<string, List<string>> GetBatchNameLists(IList<EventNotificationHandler> eventNotifications, IList<BatchProcessingTypeDto> batchProcessingTypes)
         {
             var eventHandlerBatchNames = new List<string>();
@@ -245,7 +286,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint" };
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint", "ApiIntegration" };
 
             if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
@@ -699,6 +740,38 @@ namespace CampusLogicEvents.Web.Models
             catch (Exception e)
             {
                 logger.Error(e);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Validates API Integrations.
+        /// </summary>
+        /// <returns></returns>
+        public static HttpResponseMessage ValidateApiIntegrations(ConfigurationModel configurationModel)
+        {
+            try
+            {
+                if (configurationModel.CampusLogicSection.ApiIntegrationsEnabled == null)
+                {
+                    throw new Exception();
+                }
+
+                if (configurationModel.CampusLogicSection.ApiIntegrationsList.Count == 0)
+                {
+                    throw new Exception();
+                }
+
+                if (configurationModel.CampusLogicSection.ApiEndpointsList.Count == 0)
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.Error(exception);
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
             }
 

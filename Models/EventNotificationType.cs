@@ -9,5 +9,6 @@
         public bool IsCommandAttributeRequired { get; set; }
         public bool IsDocumentSettingsRequired { get; set; }
         public bool IsBatchProcessingRequired { get; set; }
+        public bool IsApiIntegrationRequired { get; set; }
     }
 }
