@@ -34,6 +34,8 @@ namespace CampusLogicEvents.Web.Models
                 //4. Rinse & Repeat every x minutes.
                 try
                 {
+                    List<EventNotificationData> eventNotificationDataList = new List<EventNotificationData>();
+
                     //update all the current eventNotification records with no processguid to be processed.
                     dbContext.Database.ExecuteSqlCommand($"UPDATE [dbo].[EventNotification] SET [ProcessGuid] = '{processGuid}' WHERE [ProcessGuid] IS NULL");
 
@@ -52,7 +54,6 @@ namespace CampusLogicEvents.Web.Models
 
                         if (sharedEvents.Any())
                         {
-                            List<EventNotificationData> eventNotificationDataList = new List<EventNotificationData>();
                             //Make sure the event's processguid matches what we just generated so we're not re-processing events.
                             var sharedEventsToProcess =
                                 dbContext.EventNotifications
@@ -72,6 +73,7 @@ namespace CampusLogicEvents.Web.Models
                                 //send the list of events over to be processed into a file
                                 FileStoreManager filestoreManager = new FileStoreManager();
                                 filestoreManager.CreateFileStoreFile(eventNotificationDataList);
+                                eventNotificationDataList.Clear();
                             }
                         }
 
@@ -80,22 +82,23 @@ namespace CampusLogicEvents.Web.Models
                         {
                             var individualEventsToProcess =
                                 dbContext.EventNotifications
-                                .Where(e => individualEvents.Contains(e.EventNotificationId) && e.ProcessGuid == processGuid)
-                                .Select(m => m.Message);
+                                .Where(e => individualEvents.Contains(e.EventNotificationId) && e.ProcessGuid == processGuid);
 
-                            foreach (string message in individualEventsToProcess)
+
+                            foreach (int eventNotificationId in individualEvents)
                             {
-                                List<EventNotificationData> eventNotificationDataList =
-                                    new List<EventNotificationData>();
-                                //Convert the json back into EventNotificationData
-                                EventNotificationData eventData =
-                                    JsonConvert.DeserializeObject<EventNotificationData>(message);
-                                eventNotificationDataList.Add(eventData);
+                                foreach (string message in individualEventsToProcess.Where(s => s.EventNotificationId == eventNotificationId).Select(s => s.Message))
+                                {
+                                    //Convert the json back into EventNotificationData
+                                    EventNotificationData eventData = JsonConvert.DeserializeObject<EventNotificationData>(message);
+                                    eventNotificationDataList.Add(eventData);
+                                }
 
-                                //process these event into individual file
+                                //process these events into their own file
                                 FileStoreManager filestoreManager = new FileStoreManager();
                                 filestoreManager.CreateFileStoreFile(eventNotificationDataList);
-                                eventNotificationDataList.Remove(eventData);
+                                //clear out the list now that we've completed processing
+                                eventNotificationDataList.Clear();
                             }
                         }
                     }

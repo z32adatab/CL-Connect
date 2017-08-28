@@ -543,7 +543,10 @@ namespace CampusLogicEvents.Web.Models
                     }
 
                     httpClient.BaseAddress = new Uri(apiIntegration.Root);
-                    
+
+                    // Allow 5 minutes for response
+                    httpClient.Timeout = new TimeSpan(0,5,0);
+                                        
                     var authType = apiIntegration.Authentication;
                     switch (authType)
                     {
@@ -555,7 +558,7 @@ namespace CampusLogicEvents.Web.Models
                             break;
                         case ConfigConstants.OAuth2:
                             var oauth2Token = GetOauth2TokenAsync(apiIntegration).Result;
-                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("OAuth2", oauth2Token);
+                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oauth2Token);
                             break;
                         case ConfigConstants.OAuth_WRAP:
                             var oauthwrapToken = GetOauthWrapTokenAsync(apiIntegration).Result;
@@ -602,7 +605,7 @@ namespace CampusLogicEvents.Web.Models
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new Exception("Invalid response");
+                        throw new Exception("Invalid response - " + (int)response.StatusCode + " " + response.StatusCode + " - Attempted to call " + apiEndpoint.Method + " " + apiIntegration.Root + endpoint);
                     }
                 }                              
             }
