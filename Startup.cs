@@ -20,12 +20,14 @@ using Hangfire.Storage;
 
 namespace CampusLogicEvents.Web
 {
+    /*IMPORTANT: Hangfire uses NCronTab syntax. Be careful when using online cron expression builders */
     public class Startup
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
         private static readonly CampusLogicSection campusLogicSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
         private static readonly NotificationManager notificationManager = new NotificationManager();
-
+        private const string ISIR_INCORRECT_FORMAT_ERROR = "ISIR corrections DaysToRun is in an incorrect format";
+        private List<string> _acceptedDaysToRun = new List<string> { "SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT" };
 
         public void Configuration(IAppBuilder app)
         {
@@ -65,6 +67,7 @@ namespace CampusLogicEvents.Web
 
             bool? filestoreEnabled = campusLogicSection.FileStoreSettings.FileStoreEnabled;
 
+            //Have to explicitly check for true. This value could be null if setup preferences have never been saved.
             if (filestoreEnabled == true)
             {
                 if (string.IsNullOrWhiteSpace(campusLogicSection.FileStoreSettings.FileStorePath))
@@ -74,8 +77,8 @@ namespace CampusLogicEvents.Web
                 else
                 {
                     string minutes = campusLogicSection.FileStoreSettings.FileStoreMinutes;
-                    RecurringJob.AddOrUpdate(() => FileStoreService.ProcessFileStore(),
-                        "*/" + minutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
+
+                    RecurringJob.AddOrUpdate(() => FileStoreService.ProcessFileStore(), GetCronExpressionByMinutes(minutes));
                 }
             }
             else
@@ -122,6 +125,52 @@ namespace CampusLogicEvents.Web
             {
                 logger.Error("Speicified Pickup Directory was indicated as the delivery method for SMTP but no pickup directory location was specified ");
             }
+        }
+
+        /// <summary>
+        /// Gets a cron expression, based on value passed in
+        /// </summary>
+        /// <param name="minutes"></param>
+        /// <returns></returns>
+        private string GetCronExpressionByMinutes(string minutes)
+
+        {
+            string cronExpression = string.Empty;
+
+            /* When working with minutes in a Cron expression, the max allowed value is 59. 
+             * See if they have set a value higher than 59 minutes -- if so, use the appropriate Cron method
+             * to run at the desired interval (every x days, every x hours, every x minutes, etc) 
+             */
+            var convertedTime = Convert.ToDouble(minutes);
+            var timeInDays = TimeSpan.FromMinutes(convertedTime).Days;
+            var timeInHours = TimeSpan.FromMinutes(convertedTime).Hours;
+
+            if (timeInDays >= 1)
+            {
+                //Run every x days
+                cronExpression = 0 + " " + 0 + " " + $"*/{timeInDays} * *";
+            }
+            else if (timeInHours == 24)
+            {
+                //Run once a day, everyday
+                cronExpression = Cron.Daily();
+            }
+            else if (timeInHours == 1)
+            {
+                //Run every hour, on the hour.
+                cronExpression = Cron.Hourly();
+            }
+            else if (timeInHours >= 1 && timeInHours < 24 && timeInDays == 0)
+            {
+                //Run every x hours
+                cronExpression = 0 + " " + $"*/{timeInHours}" + " " + "* * *";
+            }
+            else
+            {
+                //Default cron expression (every x minutes)
+                cronExpression = "*/" + minutes + " " + "*" + " " + "*" + " " + "*" + " " + "*";
+            }
+            return cronExpression;
         }
 
         /// <summary>
@@ -231,34 +280,33 @@ namespace CampusLogicEvents.Web
                     return;
                 }
 
-                var acceptedDatsToRun = new List<string> { "SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT" };
-                if (campusLogicSection.ISIRCorrectionsSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => !acceptedDatsToRun.Contains(day.ToUpperInvariant().Trim())))
+                if (campusLogicSection.ISIRCorrectionsSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => !_acceptedDaysToRun.Contains(day.ToUpperInvariant().Trim())))
                 {
-                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", "ISIR corrections DaysToRun is in the incorret format");
-                    logger.Error("ISIR corrections DaysToRun is in the incorret format");
+                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", ISIR_INCORRECT_FORMAT_ERROR);
+                    logger.Error(ISIR_INCORRECT_FORMAT_ERROR);
                     return;
                 }
 
                 //Correct format is: HH:MMAM or HH:MMPM.. we will also except H:MMAM or HH:MMam(and their PM versions)
                 if (!Regex.IsMatch(campusLogicSection.ISIRCorrectionsSettings.TimeToRun, @"^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]+(AM|PM|am|pm)$"))
                 {
-                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", "ISIR corrections TimeToRun is in the incorret format");
-                    logger.Error("ISIR corrections TimeToRun is in the incorret format");
+                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", ISIR_INCORRECT_FORMAT_ERROR);
+                    logger.Error(ISIR_INCORRECT_FORMAT_ERROR);
                     return;
                 }
 
                 var amOrPm = campusLogicSection.ISIRCorrectionsSettings.TimeToRun.Substring(campusLogicSection.ISIRCorrectionsSettings.TimeToRun.Length - 2, 2).ToUpperInvariant();
                 if (amOrPm != "AM" && amOrPm != "PM")
                 {
-                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", "ISIR corrections enabled but TimeToRun invalid format");
-                    logger.Error("ISIR corrections enabled but TimeToRun invalid format");
+                    NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", ISIR_INCORRECT_FORMAT_ERROR);
+                    logger.Error(ISIR_INCORRECT_FORMAT_ERROR);
                     return;
                 }
 
                 if (campusLogicSection.ISIRCorrectionsSettings.FileExtension != "txt" && campusLogicSection.ISIRCorrectionsSettings.FileExtension != "dat" && campusLogicSection.ISIRCorrectionsSettings.FileExtension != "")
                 {
                     NotificationService.ErrorNotification("Automated ISIR Corrections Batch Processing", "ISIR corrections enabled but file extension invalid format, valid formats are txt or dat");
-                    logger.Error("ISIR corrections enabled but TimeToRun invalid format");
+                    logger.Error(ISIR_INCORRECT_FORMAT_ERROR);
                     return;
                 }
 
@@ -272,16 +320,7 @@ namespace CampusLogicEvents.Web
                     logger.Error("ISIR corrections enabled but TimeToRun invalid format");
                     return;
                 }
-
-                //This is done using Cron expression
-                //https://www.quartz-scheduler.org/documentation/quartz-2.1.x/tutorials/crontrigger
-                //http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/tutorial-lesson-06
-                //This site details how to create this expression, we are currently using a daily at
-                //a certain time expression: 0 MM HH ? * * but be adjusted to use something else if needed
-
-                //Also the RecurringJob by default uses UTC time, to convert to local time see:
-                //http://www.timeanddate.com/worldclock/converter.html
-
+                
                 //Set reoccurance based on configs
                 RecurringJob.AddOrUpdate(() => ISIRService.ISIRCorrections(), minutes + " " + hour + DAILY);
                 //For easy testing, uncomment this line
@@ -344,8 +383,7 @@ namespace CampusLogicEvents.Web
                     return;
                 }
 
-                var acceptedDatsToRun = new List<string> { "SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT" };
-                if (uploadSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => !acceptedDatsToRun.Contains(day.ToUpperInvariant().Trim())))
+                if (uploadSettings.DaysToRun.Split(Convert.ToChar(",")).Any(day => !_acceptedDaysToRun.Contains(day.ToUpperInvariant().Trim())))
                 {
                     NotificationService.ErrorNotification($"Automated {uploadSettings.UploadType} Upload", $"{uploadSettings.UploadType} Days to Run is not in correct format");
                     logger.Error($"{uploadSettings.UploadType} Days to Run is not in correct format");

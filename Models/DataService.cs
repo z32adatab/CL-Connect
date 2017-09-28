@@ -55,7 +55,7 @@ namespace CampusLogicEvents.Web.Models
 
                             BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
                         }
-                       else
+                        else
                         {
                             var eventToUpdate = dbContext.ReceivedEvents.First();
                             eventToUpdate.EventData = notificationEvent.ToString();
@@ -170,12 +170,12 @@ namespace CampusLogicEvents.Web.Models
                         //Was a documentId sent over? If so, populate the Document Metadata.
                         if (eventData.SvDocumentId > 0)
                         {
-                                var manager = new DocumentManager();
-                                eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+                            var manager = new DocumentManager();
+                            eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
                         }
 
                         //Check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
-                     if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
+                        if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
                         {
                             if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
                             {
@@ -189,7 +189,7 @@ namespace CampusLogicEvents.Web.Models
                             eventData.CommunicationType = communicationActivityMetadata.CommunicationType;
                             eventData.CommunicationAddress = communicationActivityMetadata.CommunicationAddress;
                         }
-                        
+
                         //Now Send it to the correct handler
                         if (eventHandler.HandleMethod == "DatabaseCommandNonQuery")
                         {
@@ -219,8 +219,9 @@ namespace CampusLogicEvents.Web.Models
                         }
                         else if (eventHandler.HandleMethod == "FileStoreAndDocumentRetrieval")
                         {
-                            FileStoreHandler(eventData);
                             DocumentRetrievalHandler(eventData);
+                            //SV-2383: Moving the File Store handler *after* the Document Retrieval Handler so that if the Doc handler fails, it won't log the same event on retry.
+                            FileStoreHandler(eventData);
                         }
                         else if (eventHandler.HandleMethod == "AwardLetterPrint")
                         {
@@ -451,7 +452,7 @@ namespace CampusLogicEvents.Web.Models
                         Convert.ToBase64String(
                             Encoding.ASCII.GetBytes(
                                 string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
-                    
+
                     var body = "grant_type=client_credentials";
 
                     StringContent theContent = new StringContent(body, Encoding.UTF8, "application/x-www-form-urlencoded");
@@ -545,13 +546,13 @@ namespace CampusLogicEvents.Web.Models
                     httpClient.BaseAddress = new Uri(apiIntegration.Root);
 
                     // Allow 5 minutes for response
-                    httpClient.Timeout = new TimeSpan(0,5,0);
-                                        
+                    httpClient.Timeout = new TimeSpan(0, 5, 0);
+
                     var authType = apiIntegration.Authentication;
                     switch (authType)
                     {
                         case ConfigConstants.Basic:
-                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", 
+                            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                                 Convert.ToBase64String(
                                     Encoding.ASCII.GetBytes(
                                         string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
@@ -566,7 +567,7 @@ namespace CampusLogicEvents.Web.Models
                             break;
                         default:
                             break;
-                    }            
+                    }
 
                     // use the eventdata and its values to link up to the endpoint's parameters
                     var parameterMappings = JArray.Parse(apiEndpoint.ParameterMappings);
@@ -607,7 +608,7 @@ namespace CampusLogicEvents.Web.Models
                     {
                         throw new Exception("Invalid response - " + (int)response.StatusCode + " " + response.StatusCode + " - Attempted to call " + apiEndpoint.Method + " " + apiIntegration.Root + endpoint);
                     }
-                }                              
+                }
             }
             catch (Exception e)
             {

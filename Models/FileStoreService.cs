@@ -77,14 +77,11 @@ namespace CampusLogicEvents.Web.Models
                             }
                         }
 
-                        //Process any individual events
                         if (individualEvents.Any())
                         {
-                            var individualEventsToProcess =
-                                dbContext.EventNotifications
-                                .Where(e => individualEvents.Contains(e.EventNotificationId) && e.ProcessGuid == processGuid);
+                            var individualEventsToProcess = dbContext.EventNotifications.Where(e => individualEvents.Contains(e.EventNotificationId) && e.ProcessGuid == processGuid);
 
-
+                            //Process any events configured for individual store into separate files (e.g., all 104 events in one file, all 105 in another)
                             foreach (int eventNotificationId in individualEvents)
                             {
                                 foreach (string message in individualEventsToProcess.Where(s => s.EventNotificationId == eventNotificationId).Select(s => s.Message))
@@ -93,8 +90,6 @@ namespace CampusLogicEvents.Web.Models
                                     EventNotificationData eventData = JsonConvert.DeserializeObject<EventNotificationData>(message);
                                     eventNotificationDataList.Add(eventData);
                                 }
-
-                                //process these events into their own file
                                 FileStoreManager filestoreManager = new FileStoreManager();
                                 filestoreManager.CreateFileStoreFile(eventNotificationDataList);
                                 //clear out the list now that we've completed processing
