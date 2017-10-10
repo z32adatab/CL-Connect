@@ -76,14 +76,14 @@ namespace CampusLogicEvents.Web.WebAPI
 
                 response.CampusLogicSection.DocumentSettings.DocumentsEnabled = response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? response.CampusLogicSection.DocumentSettings.IndexFileEnabled;
                 response.AppSettingsSection = appSettings;
-                //temp workaround for deserialization issue
-                response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
-                                                                            || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
-                                                                            || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
-                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
-                                                                            || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
-                                                                            || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
-                                                                            || (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false);
+				//temp workaround for deserialization issue
+				response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
+																			|| (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
+																			|| (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
+																			|| (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+																			|| (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+																			|| (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
+																			|| (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false);																			
                 response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
                 response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
                 response.CampusLogicSection.StoredProcedureList =
@@ -256,7 +256,8 @@ namespace CampusLogicEvents.Web.WebAPI
 
                     campusLogicSection.ApiEndpoints.Add(endpointElement);
                 }
-                
+
+				campusLogicSection.BulkActionSettings = configurationModel.CampusLogicSection.BulkActionSettings;
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;

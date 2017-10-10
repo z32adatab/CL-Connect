@@ -128,6 +128,11 @@ angular.module('clConnectApp')
                     controller: "apiIntegrationController",
                     controllerAs: "vm"
                 })
+                .when("/bulkAction", {
+                    templateUrl: urlRoot + "/setup/bulkaction",
+                    controller: "bulkActionController",
+                    controllerAs: "vm"
+                })
                 .otherwise({ redirectTo: "" });
 
             $provide.decorator("$location", ["$delegate", function ($delegate) {

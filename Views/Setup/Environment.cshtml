@@ -40,6 +40,10 @@
                     <label class="k-checkbox-label" for="isirUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates ISIR upload">ISIR Uploads</label>
                 </div>
                 <div class="padding-five">
+                    <input type="checkbox" id="bulkActions" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.bulkActionSettings.bulkActionEnabled, 'bulkActionsValid');" ng-model="service.configurationModel.campusLogicSection.bulkActionSettings.bulkActionEnabled"/>
+                    <label class="k-checkbox-label" for="bulkActions" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables Bulk Actions">Bulk Actions</label>
+                </div>
+                <div class="padding-five">
                     <input type="checkbox" id="awardLetterUpload" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled, 'awardLetterUploadValid');" ng-model="service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled">
                     <label class="k-checkbox-label" for="awardLetterUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter data file upload">AwardLetter Uploads</label>
                 </div>
@@ -63,11 +67,11 @@
                         <label class="k-checkbox-label" for="documentImaging" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables document specific notifications and processing">Documents</label>
                     </div>
                     <div class="sub-check-box">
-                        <input type="checkbox" id="storedProcedure" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.storedProceduresEnabled, 'storedProcedureValid');" ng-model="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
+                        <input type="checkbox" id="storedProcedure" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.storedProceduresEnabled, 'storedProcedureValid');" ng-model="service.configurationModel.campusLogicSection.storedProceduresEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
                         <label class="k-checkbox-label" for="storedProcedure" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables configurable procedure">Stored Procedure</label>
                     </div>
                     <div class="sub-check-box">
-                        <input type="checkbox" id="fileStore" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled, 'fileStoreSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
+                        <input type="checkbox" id="fileStore" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled, 'fileStoreSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
                         <label class="k-checkbox-label" for="fileStore" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables file store configuration">File Store</label>
                     </div>
                     <div class="sub-check-box">
@@ -75,7 +79,7 @@
                         <label class="k-checkbox-label" for="awardLetterPrint" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables print configuration for Award Letters">Award Letter Print</label>
                     </div>
                     <div class="sub-check-box">
-                        <input type="checkbox" id="batchProcessing" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.batchProcessingEnabled, 'batchProcessingSettingsValid');" ng-model="service.configurationModel.campusLogicSection.batchProcessingEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled"/>
+                        <input type="checkbox" id="batchProcessing" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.batchProcessingEnabled, 'batchProcessingSettingsValid');" ng-model="service.configurationModel.campusLogicSection.batchProcessingEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
                         <label class="k-checkbox-label" for="batchProcessing" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables batch processing handling for multiple events">Batch Processing</label>
                     </div>
                     <div class="sub-check-box">

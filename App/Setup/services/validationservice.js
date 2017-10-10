@@ -25,6 +25,7 @@
             testEventNotifications: testEventNotifications,
             testCredentials: testCredentials,
             testEnvironment: testEnvironment,
+            testBulkActionSettings: testBulkActionSettings,
             testSMTPSettings: testSmtpSettings,
             testAppSettings: testAppSettings,
             testIsirUploadPath: testIsirUpload,
@@ -47,7 +48,7 @@
             hasMissingApiEndpointName: hasMissingApiEndpointName
         };
 
-        function hasMissingApiEndpointName(currentStep) {            
+        function hasMissingApiEndpointName(currentStep) {
             var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
             var apiEndpointsList = setupservice.configurationModel.campusLogicSection.apiEndpointsList;
 
@@ -56,7 +57,7 @@
 
             for (var i = 0; i < eventNotificationsList.length; i++) {
                 var apiEndpointName = eventNotificationsList[i].apiEndpointName;
-                if (apiEndpointName) {                    
+                if (apiEndpointName) {
                     eventNotificationApiEndpointNames.push(apiEndpointName);
                 }
             }
@@ -75,6 +76,7 @@
                 }
             }
 
+            service.pageValidations.apiIntegrationsValid = true;
             return false;
         }
 
@@ -112,17 +114,14 @@
 
             // Check for blank batch name
             for (var i = 0; i < eventNotificationsList.length; i++) {
-                if (eventNotificationsList[i].handleMethod == "BatchProcessingAwardLetterPrint" && (!eventNotificationsList[i].batchName || !eventNotificationsList[i].batchName.length))
-                {
+                if (eventNotificationsList[i].handleMethod == "BatchProcessingAwardLetterPrint" && (!eventNotificationsList[i].batchName || !eventNotificationsList[i].batchName.length)) {
                     return true;
                 }
             }
 
             // Check for duplicate batch name within a type
-            if (eventNotificationsList.length > 1)
-            {
-                for (var i = 0; i < eventNotificationsList.length; i++)
-                {
+            if (eventNotificationsList.length > 1) {
+                for (var i = 0; i < eventNotificationsList.length; i++) {
                     if (eventNotificationsList[i].handleMethod == "BatchProcessingAwardLetterPrint") {
                         if (i < eventNotificationsList.length - 1) {
                             for (var j = i + 1; j < eventNotificationsList.length; j++) {
@@ -140,26 +139,11 @@
 
         function hasInvalidApiEndpointName() {
             var eventNotificationsList = setupservice.configurationModel.campusLogicSection.eventNotificationsList;
-            
+
             // Check for blank API Endpoint Name
             for (var i = 0; i < eventNotificationsList.length; i++) {
                 if (eventNotificationsList[i].handleMethod == "ApiIntegration" && (!eventNotificationsList[i].apiEndpointName || !eventNotificationsList[i].apiEndpointName.length)) {
                     return true;
-                }
-            }
-
-            // Check for duplicate API Endpoint Name
-            if (eventNotificationsList.length > 1) {
-                for (var i = 0; i < eventNotificationsList.length; i++) {
-                    if (eventNotificationsList[i].handleMethod == "ApiIntegration") {
-                        if (i < eventNotificationsList.length - 1) {
-                            for (var j = i + 1; j < eventNotificationsList.length; j++) {
-                                if (eventNotificationsList[j].handleMethod == "ApiIntegration" && eventNotificationsList[j].apiEndpointName == eventNotificationsList[i].apiEndpointName) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
@@ -191,57 +175,47 @@
 
         function folderPathUnique(uploadpath) {
             var filePathValues = [];
-            if (setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirUploadFilePath);
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.isirUploadSettings.isirArchiveFilePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath);
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath);
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
 
-                if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientEnabled)
-                {
+                if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientEnabled) {
                     filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.tdClientArchiveFilePath);
                 }
             }
 
-            if (setupservice.configurationModel.campusLogicSection.documentSettings.documentsEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.documentSettings.documentsEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.documentSettings.documentStorageFilePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled)
-            { 
+            if (setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStoreEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.fileStoreSettings.fileStorePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintFilePath);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.documentImportSettings.enabled)
-            {            
+            if (setupservice.configurationModel.campusLogicSection.documentImportSettings.enabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.fileDirectory);
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.documentImportSettings.archiveDirectory);
             }
 
-            if (setupservice.configurationModel.campusLogicSection.batchProcessingEnabled)
-            {
+            if (setupservice.configurationModel.campusLogicSection.batchProcessingEnabled) {
                 var batchProcessingTypesList = setupservice.configurationModel.campusLogicSection.batchProcessingTypesList;
                 var batchFilePaths = [];
 
@@ -354,6 +328,9 @@
                 case '/apiintegration':
                     service.testApiIntegrations(form);
                     break;
+                case '/bulkAction':
+                    service.testBulkActionSettings();
+                    break;
                 default:
                     return;
             }
@@ -371,6 +348,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.smtpSettings.notificationsEnabled) {
                 service.testSMTPSettings();
+            }
+            if (setupservice.configurationModel.campusLogicSection.bulkActionSettings.bulkActionEnabled) {
+                service.testBulkActionSettings();
             }
             if (setupservice.configurationModel.campusLogicSection.eventNotificationsEnabled) {
                 service.testEventNotifications();
@@ -450,8 +430,8 @@
 
         function testAwardLetterUpload() {
             if (setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun.length > 0
-               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath)
-               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath)) {
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath)
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterArchiveFilePath)) {
 
                 service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadFilePath }
                     , function (response) {
@@ -476,8 +456,8 @@
 
         function testFileMappingUpload() {
             if (setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadDaysToRun.length > 0
-               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath)
-               && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath)) {
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath)
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingArchiveFilePath)) {
 
                 service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath }
                     , function (response) {
@@ -507,11 +487,11 @@
                 && $rootScope.isNullOrWhitespace(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.timeToRun) === false
                 && setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.length > 0) {
                 service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath }
-                   , function (response) {
-                       //service.pageValidations.isirCorrectionsValid = true;
-                   }, function (error) {
-                       service.pageValidations.isirCorrectionsValid = false;
-                   });
+                    , function (response) {
+                        //service.pageValidations.isirCorrectionsValid = true;
+                    }, function (error) {
+                        service.pageValidations.isirCorrectionsValid = false;
+                    });
             }
             else {
                 service.pageValidations.isirCorrectionsValid = false;
@@ -579,20 +559,20 @@
                     service.pageValidations.apiCredentialsTested = false;
                     service.testApiCredentials
                         .get(
-                            {
-                                username: setupservice.configurationModel.appSettingsSection.apiUsername,
-                                password: setupservice.configurationModel.appSettingsSection.apiPassword,
-                                environment: setupservice.configurationModel.appSettingsSection.environment,
-                                awardLetterUploadEnabled: setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled
-                            },
-                            function () {
-                                service.pageValidations.apiCredentialsTested = true;
-                                service.pageValidations.apiCredentialsValid = true;
-                            },
-                            function () {
-                                service.pageValidations.apiCredentialsTested = true;
-                                service.pageValidations.apiCredentialsValid = false;
-                            });
+                        {
+                            username: setupservice.configurationModel.appSettingsSection.apiUsername,
+                            password: setupservice.configurationModel.appSettingsSection.apiPassword,
+                            environment: setupservice.configurationModel.appSettingsSection.environment,
+                            awardLetterUploadEnabled: setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled
+                        },
+                        function () {
+                            service.pageValidations.apiCredentialsTested = true;
+                            service.pageValidations.apiCredentialsValid = true;
+                        },
+                        function () {
+                            service.pageValidations.apiCredentialsTested = true;
+                            service.pageValidations.apiCredentialsValid = false;
+                        });
                 }
             }
             catch (exception) {
@@ -644,10 +624,16 @@
                         });
                 }
             }
-            catch 
+            catch
                 (exception) {
                 toastr.error("An error occured while attempting to connect to SMTP.");
             }
+        }
+
+        function testBulkActionSettings() {     
+            service.pageValidations.bulkActionSettingsValid = true;
+            var settings = setupservice.configurationModel.campusLogicSection.bulkActionSettings;
+            service.pageValidations.bulkActionSettingsValid = settings && settings.bulkActionEnabled && !!(settings.bulkActionArchivePath && settings.bulkActionUploadPath && settings.frequency && settings.notificationEmail);
         }
 
         function testDocumentSettings(form) {

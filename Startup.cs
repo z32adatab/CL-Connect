@@ -49,6 +49,7 @@ namespace CampusLogicEvents.Web
 
             ValidateSMTPSettings();
             AutomatedISIRUpload();
+            AutomatedBulkActionJob();
             AutomatedAwardLetterUpload();
             AutomatedFileMappingUpload();
             AutomatedISIRCorrectionBatching();
@@ -249,6 +250,59 @@ namespace CampusLogicEvents.Web
             });
         }
 
+
+        /// <summary>
+        /// Checks for configurations and settings 
+        /// for the automated Bulk Action process
+        /// </summary>
+        private void AutomatedBulkActionJob()
+        {
+            var bulkActionSettings = campusLogicSection.BulkActionSettings;
+            string serviceName = "Automated Bulk Action";
+
+            // validation
+            if (bulkActionSettings == null)
+            {
+                NotificationService.ErrorNotification(serviceName, "Bulk Action settings are missing from the config file");
+                logger.Error("Bulk Action settings are missing from the config file");
+                return;
+            }
+            if (bulkActionSettings.BulkActionEnabled)
+            {
+                //Set reoccurance based on configs
+                var cronValue = "";
+
+                switch (bulkActionSettings.Frequency)
+                {
+                    case "daily":
+                        cronValue = Cron.Daily();
+                        break;
+                    case "weekly":
+                        cronValue = Cron.Weekly();
+                        break;
+                    case "minutes":
+                        cronValue = Cron.Minutely();
+                        break;
+                    case "hourly":
+                        cronValue = Cron.Hourly();
+                        break;
+                }
+
+                RecurringJob.AddOrUpdate(serviceName, () => DocumentImportService.ProcessBulkAction(new BulkActionUploadDto
+                {
+                    FileUploadDirectory = bulkActionSettings.BulkActionUploadPath,
+                    FileArchiveDirectory = bulkActionSettings.BulkActionArchivePath,
+                    NotificationEmail = bulkActionSettings.NotificationEmail,
+                    UseSSN = bulkActionSettings.UseSSN
+                }), cronValue);
+            }
+            else
+            {
+                RecurringJob.RemoveIfExists(serviceName);
+            }
+        }
+
+
         /// <summary>
         /// ISIR corrections setup for automation
         /// </summary>
@@ -320,7 +374,7 @@ namespace CampusLogicEvents.Web
                     logger.Error("ISIR corrections enabled but TimeToRun invalid format");
                     return;
                 }
-                
+
                 //Set reoccurance based on configs
                 RecurringJob.AddOrUpdate(() => ISIRService.ISIRCorrections(), minutes + " " + hour + DAILY);
                 //For easy testing, uncomment this line

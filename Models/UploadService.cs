@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
 using CampusLogicEvents.Implementation;
-using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
 using Hangfire;
 using log4net;
 
 namespace CampusLogicEvents.Web.Models
 {
-    public static class UploadService
+	public static class UploadService
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
 

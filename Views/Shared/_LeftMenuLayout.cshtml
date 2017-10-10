@@ -57,6 +57,11 @@
                                         ISIR Upload <i ng-if="!validationService.pageValidations.isirUploadValid" class="fa fa-exclamation-triangle padding-top-five important-color pull-right"></i>
                                     </a>
                                 </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.bulkActionSettings.bulkActionEnabled" ng-class="getActiveStep('/bulkAction')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/bulkAction" ng-click="validateStep();">
+                                        Bulk Action <i ng-if="!validationService.pageValidations.bulkActionSettingsValid" class="fa fa-exclamation-triangle padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
                                 <li ng-if="service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled" ng-class="getActiveStep('/awardLetterUpload')">
                                     <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/awardLetterUpload" ng-click="validateStep();">
                                         AwardLetter Upload <i ng-if="!validationService.pageValidations.awardLetterUploadValid" class="fa fa-exclamation-triangle  icon-fixed-width padding-top-five important-color pull-right"></i>
@@ -165,7 +170,7 @@
                         <div class="col-md-12" ng-if="(invalidApiEndpointName || hasInvalidApiEndpointName()) && activeStep === '/saveConfigurations'">
                             <p class="important-color">
                                 <b>An API Endpoint name is incorrect.</b> <br />
-                                <b>Please ensure API Endpoint names are unique and not blank.</b>
+                                <b>Please ensure API Endpoint names are not blank.</b>
                             </p>
                         </div>
                         <div class="col-md-12" ng-if="(missingApiEndpointName || hasMissingApiEndpointName()) && activeStep === '/saveConfigurations'">

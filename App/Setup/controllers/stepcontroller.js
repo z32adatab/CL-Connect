@@ -146,6 +146,8 @@
                 case '/apiintegration':
                     form = $scope.apiIntegrationForm;
                     break;
+                case '/bulkAction':
+                    break;
                 default:
                     return;
             }

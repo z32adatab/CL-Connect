@@ -424,6 +424,11 @@ namespace CampusLogicEvents.Web.Models
             }
         }
 
+        private static string GetJsonFromNameValueCollection(NameValueCollection data)
+        {
+            return JsonConvert.SerializeObject(data.AllKeys.ToDictionary(k => k, k => data[k]));
+        }
+
         /// <summary>
         /// Converts a collection of parameters and their values into HttpContent.
         /// </summary>
@@ -432,9 +437,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         private static StringContent GetHttpContent(NameValueCollection eventParams, string mimeType)
         {
-            var dict = eventParams.AllKeys.ToDictionary(k => k, k => eventParams[k]);
-            var jsonString = JsonConvert.SerializeObject(dict);
-            return new StringContent(jsonString, Encoding.UTF8, mimeType);
+            return new StringContent(GetJsonFromNameValueCollection(eventParams), Encoding.UTF8, mimeType);
         }
 
         /// <summary>
@@ -520,6 +523,13 @@ namespace CampusLogicEvents.Web.Models
             }
         }
 
+        private static void LogRequest(HttpResponseMessage response, NameValueCollection data)
+        {
+            string request = $"{response.RequestMessage.Method} {response.RequestMessage.RequestUri} Status Code: {(int)response.StatusCode}, Version: {response.Version}, Data: {GetJsonFromNameValueCollection(data)}, Headers: {{ {response.RequestMessage.Headers} }}";
+
+            logger.InfoFormat("API Integration - Request: {0}", request);
+        }
+        
         /// <summary>
         /// Handles an HTTP request for an endpoint.
         /// </summary>
@@ -547,6 +557,9 @@ namespace CampusLogicEvents.Web.Models
 
                     // Allow 5 minutes for response
                     httpClient.Timeout = new TimeSpan(0, 5, 0);
+
+                    // Custom header for API service to track requests
+                    httpClient.DefaultRequestHeaders.Add("EventId", eventData.Id);
 
                     var authType = apiIntegration.Authentication;
                     switch (authType)
@@ -584,6 +597,7 @@ namespace CampusLogicEvents.Web.Models
                     HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
 
                     var endpoint = apiEndpoint.Endpoint;
+                    var url = apiIntegration.Root + endpoint;
 
                     switch (apiEndpoint.Method)
                     {
@@ -595,7 +609,7 @@ namespace CampusLogicEvents.Web.Models
                             response = httpClient.GetAsync(endpoint).Result;
                             break;
                         case WebRequestMethods.Http.Post:
-                            response = httpClient.PostAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;
+                            response = httpClient.PostAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;                            
                             break;
                         case WebRequestMethods.Http.Put:
                             response = httpClient.PutAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;
@@ -604,9 +618,11 @@ namespace CampusLogicEvents.Web.Models
                             break;
                     }
 
+                    LogRequest(response, eventParams);
+
                     if (!response.IsSuccessStatusCode)
                     {
-                        throw new Exception("Invalid response - " + (int)response.StatusCode + " " + response.StatusCode + " - Attempted to call " + apiEndpoint.Method + " " + apiIntegration.Root + endpoint);
+                        throw new Exception("Invalid response - " + (int)response.StatusCode + " " + response.ReasonPhrase + " - Attempted to call " + apiEndpoint.Method + " " + url);
                     }
                 }
             }
