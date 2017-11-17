@@ -153,9 +153,8 @@ namespace CampusLogicEvents.Web.Models
                         //Check if the transaction category was one of the three appeal types
                         if (eventData.SvTransactionCategoryId != null)
                         {
-                            if (((TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.SapAppeal
-                                || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjDependencyOverrideAppeal
-                                || (TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.PjEfcAppeal) && eventData.EventNotificationName == "Transaction Completed")
+                            if (((TransactionCategory)eventData.SvTransactionCategoryId != TransactionCategory.Verification
+                                && (TransactionCategory)eventData.SvTransactionCategoryId != TransactionCategory.Generic) && eventData.EventNotificationName == "Transaction Completed")
                             {
                                 if (eventData.SvTransactionId == null)
                                 {
