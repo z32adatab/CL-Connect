@@ -10,6 +10,8 @@ using Hangfire;
 using log4net;
 using Newtonsoft.Json.Linq;
 using CampusLogicEvents.Web.Results;
+using System.Threading.Tasks;
+using log4net.Core;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -85,11 +87,11 @@ namespace CampusLogicEvents.Web.Models
 				{
 					try
 					{
-						HttpResponseMessage result = manager.ImportDocument(record, importSettings).Result;
+						HttpResponseMessage result = Task.Run(()=> manager.ImportDocument(record, importSettings)).Result;
 						if (result.IsSuccessStatusCode)
 						{
 							// Archive the document once we are done with it.
-							ArchiveFile(record.FilePath, importSettings.ArchiveDirectory);
+							ArchiveFile(record.FilePath, importSettings.ArchiveDirectory, logger);
 						}
 						else
 						{
@@ -101,7 +103,7 @@ namespace CampusLogicEvents.Web.Models
 							else
 							{
 								// Get the message returned from the API.
-								string jsonStringResponse = result.Content.ReadAsStringAsync().Result;
+								string jsonStringResponse = Task.Run(() => result.Content.ReadAsStringAsync()).Result;
 
 								// Try to parse the JSON.
 								string message = null;
@@ -124,70 +126,195 @@ namespace CampusLogicEvents.Web.Models
 				}
 
 				// Done.  Now archive the file and create a failures file, if necessary.
-				ArchiveFile(filePath, importSettings.ArchiveDirectory);
+				ArchiveFile(filePath, importSettings.ArchiveDirectory, logger);
 				CreateFailuresFile(importSettings.ArchiveDirectory, filePath, failedRecords: failedRecords);
 			}
 		}
 
-		/// <summary>
-		/// Takes whatever files are in the bulk action upload directory
-		/// and posts them to SV to begin the Bulk Action process
-		/// </summary>
-		[AutomaticRetry(Attempts = 0)]
+
+        /// <summary>
+        /// Takes whatever files are in the bulk action upload directory
+        /// and posts them to SV to begin the Bulk Action process
+        /// </summary>
+        [AutomaticRetry(Attempts = 0)]
 		public static void ProcessBulkAction(BulkActionUploadDto bulkActionUpload)
 		{
 
-			DocumentManager manager = new DocumentManager();
+            try
+            {
+                logger.BulkActionInfo("ProcessBulkAction enter");
 
-			// Check read/write permissions.
-			if (!manager.ValidateDirectory(bulkActionUpload.FileUploadDirectory) ||
-				!manager.ValidateDirectory(bulkActionUpload.FileArchiveDirectory))
-			{
-				NotificationService.ErrorNotification("Bulk Action", $"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
-				logger.Error($"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
-				throw new Exception($"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
-			}
+                DocumentManager manager = new DocumentManager();
 
-			// Get all files to process.
-			string[] filesToProcess =
-				Directory.GetFiles(bulkActionUpload.FileUploadDirectory)
-					.Select(fileName => Path.Combine(bulkActionUpload.FileUploadDirectory, fileName))
-					.ToArray();
+                // Check read/write permissions.
+                if (!manager.ValidateDirectory(bulkActionUpload.FileUploadDirectory) ||
+                    !manager.ValidateDirectory(bulkActionUpload.FileArchiveDirectory))
+                {
+                    NotificationService.ErrorNotification("Bulk Action", $"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
+                    logger.BulkActionError($"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
+                    throw new Exception($"{bulkActionUpload.FileUploadDirectory} does not authorize read and write updates");
+                }
 
-			foreach (string filePath in filesToProcess)
-			{
-				try
-				{
-					HttpResponseMessage result = manager.UploadBulkAction(bulkActionUpload, filePath).Result;
-					if (result.IsSuccessStatusCode)
-					{
-						// Archive the document once we are done with it.
-						ArchiveFile(filePath, bulkActionUpload.FileArchiveDirectory);
-					}
-					else
-					{
-						if (result.Content == null)
-						{
-							// Never hit the API...failed validation.
-							throw new Exception(result.ReasonPhrase);
-						}
-						else
-						{
-							// Build error message to send to notitification service 
-							var importResult = result.Content.ReadAsAsync<ImportResult>().Result;
-							// archive after failure
-							ArchiveFile(filePath, bulkActionUpload.FileArchiveDirectory);
-							throw new Exception(FormatImportResultMessage(importResult, filePath));
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					// what to do if a file fails...
-					var response = notificationManager.SendErrorNotification("ProcessBulkAction", ex.Message, bulkActionUpload.NotificationEmail).Result;
-				}
-			}
+
+                logger.BulkActionInfo($"Loading files from \"{bulkActionUpload.FileUploadDirectory}\"");// Get all files to process.
+                string[] filesToProcess =
+                    Directory.GetFiles(bulkActionUpload.FileUploadDirectory) 
+                        .Select(fileName => Path.Combine(bulkActionUpload.FileUploadDirectory, fileName))
+                        .ToArray();
+
+                foreach (string f in filesToProcess)
+                {
+                    var filePath = f;
+                    logger.BulkActionInfo($"Processing file \"{filePath}\"");
+
+                    try
+                    {
+                        var directory = Path.GetDirectoryName(filePath);
+                        var prefix = Path.Combine(directory, Path.GetFileNameWithoutExtension(filePath));
+                        var extension = Path.GetExtension(filePath);
+
+                        //Note that while processing a file in the Upload directory, we rename it to provide for status
+                        //indication and also to help handle situations where archiving fails, or when the server resets.
+
+                        //1234.csv --> not yet processed.
+                        //1234.working.csv --> currently being processed, but not yet uploaded to student forms.
+                        //1234.complete.csv --> successfully uploaded to student forms
+                        //1234.failed.csv --> rejected by student forms
+
+                        if (prefix.EndsWith(BulkActionConstants.Working, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            //This can happen if the server reset before we had an opportunity to fully upload the file.
+                            //Let's just reprocess.
+                            logger.Info($"Encountered a working file.  Reprocessing: \"{filePath}\"");
+                        }
+                        else if (prefix.EndsWith(BulkActionConstants.Complete, StringComparison.InvariantCultureIgnoreCase)
+                            || prefix.EndsWith(BulkActionConstants.Failed, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            try
+                            {
+                                logger.BulkActionInfo($"Encountered an already-processed file \"{filePath}\", attempting to archive");
+                                ArchiveFile(filePath, bulkActionUpload.FileArchiveDirectory, logger);
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.BulkActionError(ex);
+                            }
+
+                            //At this point, we're done processing the completed file - either with success or failure.  Let's 
+                            //continue on to the next file.
+                            continue;
+                        }
+                        else
+                        {
+                            //We've encountered a file that's ready for processing.  We first rename it to .working to indicate that
+                            //the file is currently being processed.  
+                            RenameFile(ref filePath, prefix, BulkActionConstants.Working, extension);
+                        }
+
+                        HttpResponseMessage result = Task.Run(() => manager.UploadBulkAction(bulkActionUpload, filePath)).Result;
+
+                        logger.BulkActionInfo($"Bulk action upload completed with {result.StatusCode}");
+
+                        if (result.IsSuccessStatusCode)
+                        {
+                            //Rename the file to .complete and then attempt to archive it.
+                            RenameAndArchive(ref filePath, prefix, BulkActionConstants.Complete, extension, bulkActionUpload);
+                        }
+                        else
+                        {
+                            if (result.Content == null)
+                            {
+                                // Never hit the API...failed validation.
+                                throw new Exception(result.ReasonPhrase);
+                            }
+                            else
+                            {
+                                // Build error message to send to notitification service 
+                                var importResult = Task.Run(() => result.Content.ReadAsAsync<ImportResult>()).Result;
+
+                                //Rename the file to .failed and then attempt to archive it.
+                                RenameAndArchive(ref filePath, prefix, BulkActionConstants.Failed, extension, bulkActionUpload);
+
+                                throw new Exception(FormatImportResultMessage(importResult, filePath));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.BulkActionError(ex);
+
+                        try
+                        {
+                            logger.BulkActionInfo($"Attempting to send notification email to: \"{bulkActionUpload.NotificationEmail}\"");
+                            // what to do if a file fails...
+                            var response = Task.Run(() => notificationManager.SendErrorNotification("ProcessBulkAction", ex.Message, bulkActionUpload.NotificationEmail)).Result;
+
+                            if (response.SendCompleted.HasValue)
+                            {
+                                logger.BulkActionInfo("Send notification email completed without error");
+                            }
+                            else
+                            {
+                                logger.BulkActionInfo("Send notification email failed");
+                            }
+                            
+                        }
+                        catch (Exception ex2)
+                        {
+                            logger.BulkActionError($"Send notification email failed with error: \"{ex2.Message}\"");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                logger.BulkActionInfo("ProcessBulkAction exit");
+            }
 		}
+
+        private static void RenameFile(ref string filePath, string prefix, string suffix, string extension)
+        {
+            try
+            {
+                var newFilePath = $"{prefix}{suffix}{extension}";
+
+                logger.BulkActionInfo($"Attempting to rename file: \"{filePath}\" --> \"{newFilePath}\"");
+
+                File.Move(filePath, newFilePath);
+                filePath = newFilePath;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to rename bulk-action file: {ex.Message}");
+            }
+        }
+
+        private static void RenameAndArchive(ref string filePath, string prefix, string suffix, string extension, BulkActionUploadDto bulkActionUpload)
+        {
+            try
+            {
+                if (prefix.EndsWith(BulkActionConstants.Working, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var idx = prefix.LastIndexOf(BulkActionConstants.Working);
+                    prefix = prefix.Substring(0, idx);
+                }
+
+                RenameFile(ref filePath, prefix, suffix, extension);
+            }
+            catch (Exception ex)
+            {
+                logger.BulkActionError($"Upload succeeded, but failed to rename file: {ex.Message}");
+            }
+
+            try
+            {
+                ArchiveFile(filePath, bulkActionUpload.FileArchiveDirectory, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.BulkActionError($"Upload succeeded, but failed to archive file: {ex.Message}");
+            }
+        }
 
 		private static string FormatImportResultMessage(ImportResult result, string filePath)
 		{
@@ -205,7 +332,7 @@ namespace CampusLogicEvents.Web.Models
 		/// </summary>
 		/// <param name="filePath">Path of the file to archive.</param>
 		/// <param name="archiveDirectory">Directory to move the file to.</param>
-		private static void ArchiveFile(string filePath, string archiveDirectory)
+		private static void ArchiveFile(string filePath, string archiveDirectory, ILog log)
 		{
 			// Validate args
 			if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(archiveDirectory))
@@ -216,18 +343,38 @@ namespace CampusLogicEvents.Web.Models
 			if (File.Exists(filePath))
 			{
 				string fileName = Path.GetFileName(filePath);
-				string archiveFilePath = Path.Combine(archiveDirectory, fileName);
+                string fileExtension = Path.GetExtension(filePath);
 
-				// Need to delete and replace the file in the archive path if one already exists.
-				// Otherwise exception is thrown.
-				if (File.Exists(archiveFilePath))
-				{
-					DocumentManager.WaitReady(archiveFilePath);
-					File.Delete(archiveFilePath);
-				}
+                string archiveFilePathPrefix = Path.Combine(archiveDirectory, fileName);
 
-				DocumentManager.WaitReady(filePath);
+                archiveFilePathPrefix = Path.Combine(archiveDirectory, Path.GetFileNameWithoutExtension(archiveFilePathPrefix));
+
+                if (archiveFilePathPrefix.EndsWith(BulkActionConstants.Complete, StringComparison.InvariantCultureIgnoreCase)
+                    || archiveFilePathPrefix.EndsWith(BulkActionConstants.Failed, StringComparison.InvariantCultureIgnoreCase)
+                    || archiveFilePathPrefix.EndsWith(BulkActionConstants.Working, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    //Strip off the status indicator.
+                    var idx = archiveFilePathPrefix.LastIndexOf('.');
+                    archiveFilePathPrefix = archiveFilePathPrefix.Substring(0, idx);
+                }
+
+                //Include a timestamp with the new filename to ensure uniqueness.
+                archiveFilePathPrefix = $"{archiveFilePathPrefix} {DateTime.Now.ToString(DocumentManager.TimeStampFormat)}";
+
+                var archiveFilePath = $"{archiveFilePathPrefix}{fileExtension}";
+
+                //At this point, the new file name should be unique.  We still need some defensive code, however, to handle
+                //the case where there still is a naming conflict.  In that case, we just append a number on the end.
+
+                int n = 1;
+                while (File.Exists(archiveFilePath))
+                    archiveFilePath = $"{archiveFilePathPrefix} ({n++}){fileExtension}";
+
+                log.Info($"Moving file \"{filePath}\" --> \"{archiveFilePath}\"");
+
 				File.Move(filePath, archiveFilePath);
+
+                //TODO: should we auto-clean up the archive directory once it gets too full?
 			}
 		}
 
