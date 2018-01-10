@@ -578,6 +578,8 @@ namespace CampusLogicEvents.Web
             // Does the BatchProcessRecord table exist? If not, create it.
             VerifyBatchProcessRecordTableExists();
 
+            VerifyNewBatchProcessColumnsExist();
+
             RemoveBatchProcesses();
 
             bool? batchProcessingEnabled = campusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
@@ -701,12 +703,37 @@ namespace CampusLogicEvents.Web
                         ",[Type] VARCHAR(200) NOT NULL" +
                         ",[Name] VARCHAR(25) NOT NULL" +
                         ",[Message] VARCHAR(MAX) NOT NULL" +
-                        ",[ProcessGuid] UNIQUEIDENTIFIER NULL)" +
+                        ",[ProcessGuid] UNIQUEIDENTIFIER NULL" +
+                        ",[RetryCount] int NULL" +
+                        ",[RetryUpdatedDate] datetime NULL)" +
                         "CREATE INDEX ProcessGuid_Event ON [dbo].[BatchProcessRecord] ([ProcessGuid]) END");
                 }
                 catch (Exception ex)
                 {
                     logger.Error($"There was an issue with validating and/or creating the BatchProcessRecord table in LocalDB: {ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adding two columns that were added after we 
+        /// deployed this batch process (if need be)
+        /// </summary>
+        private static void VerifyNewBatchProcessColumnsExist()
+        {
+            using (var dbContext = new CampusLogicContext())
+            {
+                try
+                {
+                    dbContext.Database.ExecuteSqlCommand(
+                        "IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE name = N'RetryCount' and object_id = OBJECT_ID(N'[dbo].[BatchProcessRecord]'))" +
+                        "BEGIN ALTER TABLE [dbo].[BatchProcessRecord]" +
+                        "ADD [RetryCount] INT NULL" +
+                        ",[RetryUpdatedDate] DATETIME NULL; END");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"There was an issue with validating and/or creating the new columns for the BatchProcessRecord table in LocalDB: {ex}");
                 }
             }
         }

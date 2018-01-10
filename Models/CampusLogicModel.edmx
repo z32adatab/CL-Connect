@@ -14,6 +14,8 @@
           <Property Name="Name" Type="varchar" MaxLength="25" Nullable="false" />
           <Property Name="Message" Type="varchar(max)" Nullable="false" />
           <Property Name="ProcessGuid" Type="uniqueidentifier" />
+          <Property Name="RetryCount" Type="int" />
+          <Property Name="RetryUpdatedDate" Type="datetime" />
         </EntityType>
         <EntityType Name="EventNotification">
           <Key>
@@ -430,6 +432,8 @@
           <Property Name="Name" Type="String" Nullable="false" MaxLength="25" FixedLength="false" Unicode="false" />
           <Property Name="Message" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="false" />
           <Property Name="ProcessGuid" Type="Guid" />
+          <Property Name="RetryCount" Type="Int32" />
+          <Property Name="RetryUpdatedDate" Type="DateTime" Precision="3" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -600,6 +604,8 @@
           <EntitySetMapping Name="BatchProcessRecords">
             <EntityTypeMapping TypeName="CampusLogicEvents.Model.BatchProcessRecord">
               <MappingFragment StoreEntitySet="BatchProcessRecord">
+                <ScalarProperty Name="RetryUpdatedDate" ColumnName="RetryUpdatedDate" />
+                <ScalarProperty Name="RetryCount" ColumnName="RetryCount" />
                 <ScalarProperty Name="ProcessGuid" ColumnName="ProcessGuid" />
                 <ScalarProperty Name="Message" ColumnName="Message" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
@@ -622,8 +628,8 @@
     <Options>
       <DesignerInfoPropertySet>
         <DesignerProperty Name="ValidateOnBuild" Value="true" />
-        <DesignerProperty Name="EnablePluralization" Value="True" />
-        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="False" />
         <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
         <DesignerProperty Name="UseLegacyProvider" Value="True" />
       </DesignerInfoPropertySet>

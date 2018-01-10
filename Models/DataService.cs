@@ -224,10 +224,12 @@ namespace CampusLogicEvents.Web.Models
                         }
                         else if (eventHandler.HandleMethod == "AwardLetterPrint")
                         {
+                            logger.Info("detect this is the AwardLetterPrint");
                             AwardLetterDocumentRetrievalHandler(eventData);
                         }
                         else if (eventHandler.HandleMethod == "BatchProcessingAwardLetterPrint")
                         {
+                            logger.Info("detect this is the BatchProcessingAwardLetterPrint");
                             BatchProcessRetrievalHandler(ConfigConstants.AwardLetterPrintBatchType, eventHandler.BatchName, eventData);
                         }
                         else if (eventHandler.HandleMethod == "ApiIntegration")
@@ -378,7 +380,7 @@ namespace CampusLogicEvents.Web.Models
             using (var dbContext = new CampusLogicContext())
             {
                 //Insert the event into the BatchProcessRecord table so that it can be processed by the Automated Batch Process job.
-                dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[BatchProcessRecord]([Type], [Name], [Message], [ProcessGuid]) VALUES('{type}', '{name}', '{message}', NULL)");
+                dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[BatchProcessRecord]([Type], [Name], [Message], [ProcessGuid], [RetryCount], [RetryUpdatedDate]) VALUES('{type}', '{name}', '{message}', NULL, NULL, NULL)");
             }
         }
 

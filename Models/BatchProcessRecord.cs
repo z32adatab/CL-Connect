@@ -19,5 +19,7 @@ namespace CampusLogicEvents.Web.Models
         public string Name { get; set; }
         public string Message { get; set; }
         public Nullable<System.Guid> ProcessGuid { get; set; }
+        public Nullable<int> RetryCount { get; set; }
+        public Nullable<System.DateTime> RetryUpdatedDate { get; set; }
     }
 }

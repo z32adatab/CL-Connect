@@ -8,17 +8,22 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CampusLogicEvents.Web.Models
 {
     public static class BatchProcessingService
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
+        private static readonly int RETRY_MAX = 3;
+        private static readonly NotificationManager notificationManager = new NotificationManager();
         private static readonly CampusLogicSection campusLogicConfigSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
         
         [AutomaticRetry(Attempts = 0)]
-        public static void RunBatchProcess(string type, string name, int size)
+        public static async void RunBatchProcess(string type, string name, int size)
         {
+
+            logger.Info("enter batch processing");
             Guid processGuid = Guid.NewGuid();
             using (var dbContext = new CampusLogicContext())
             {
@@ -38,21 +43,58 @@ namespace CampusLogicEvents.Web.Models
                             if (type == ConfigConstants.AwardLetterPrintBatchType)
                             {
                                 var manager = new DocumentManager();
-                                List<Guid> recordIds = new List<Guid>();
+                                Dictionary<int,Guid> recordIds = new Dictionary<int, Guid>();
 
+                                var recordList = dbContext.BatchProcessRecords.Where(b => b.ProcessGuid == processGuid).Select(b => b).ToList();
                                 // Get all records with this process guid
-                                foreach (var record in dbContext.BatchProcessRecords.Where(b => b.ProcessGuid == processGuid).Select(b => b))
+                                foreach (var record in recordList)
                                 {
                                     // Deseralize the message
                                     EventNotificationData eventData =
                                         JsonConvert.DeserializeObject<EventNotificationData>(record.Message);
-
-                                    recordIds.Add(eventData.AlRecordId.Value);
-
-                                    // Download the batch PDF if we have reached our size or at the end
-                                    if (recordIds.Count == size)
+                                    
+                                    //Track retry attempts
+                                    var now = DateTime.Now;
+                                    var processSingularly = false;
+                                    var retryTimeHasPassed = record.RetryUpdatedDate.HasValue ? record.RetryUpdatedDate.Value.AddHours(1) < DateTime.Now : true;
+                                    if (record.RetryCount == null)
                                     {
-                                        manager.GetBatchAwardLetterPdfFile(recordIds, name);
+                                        record.RetryCount = 1;
+                                        dbContext.Database.ExecuteSqlCommand($"UPDATE[dbo].[BatchProcessRecord] SET [RetryCount] = 1, [RetryUpdatedDate] = '{now}' FROM [dbo].[BatchProcessRecord] WHERE[Id] = {record.Id}");
+                                    }
+                                    else if (retryTimeHasPassed || record.RetryCount == RETRY_MAX)
+                                    {
+                                        record.RetryCount = record.RetryCount + 1;
+                                        dbContext.Database.ExecuteSqlCommand($"UPDATE[dbo].[BatchProcessRecord] SET [RetryCount] = [RetryCount] + 1, [RetryUpdatedDate] = '{now}'  FROM [dbo].[BatchProcessRecord] WHERE[Id] = {record.Id}");
+                                    }
+
+                                    if (record.RetryCount > RETRY_MAX)
+                                    {
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id:  {eventData.AlRecordId.Value}. Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {eventData.AlRecordId.Value}.");
+                                        dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
+                                    }
+                                    else if (record.RetryCount == RETRY_MAX && retryTimeHasPassed)
+                                    {
+                                        processSingularly = true;
+                                        recordIds.Add(record.Id, eventData.AlRecordId.Value);
+                                    }
+                                    else if (retryTimeHasPassed)
+                                    {
+                                        processSingularly = false;
+                                        recordIds.Add(record.Id, eventData.AlRecordId.Value);
+                                    }
+
+                                    if (recordIds.Count == size || processSingularly)
+                                    {
+                                        var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name);
+                                        //If the response was successful remove those records from the db so
+                                        //we do not continue to process them if the file fails
+                                        if (response.IsSuccessStatusCode)
+                                        {
+                                            var recordIdList = string.Join(",", recordIds.Keys);
+                                            dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})");
+                                        }
                                         recordIds.Clear();
                                     }
                                 }
@@ -60,13 +102,25 @@ namespace CampusLogicEvents.Web.Models
                                 // Process the last group of records that was smaller than the batch size
                                 if (recordIds.Any())
                                 {
-                                    manager.GetBatchAwardLetterPdfFile(recordIds, name);
+                                    var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name);
+                                    if (response.IsSuccessStatusCode)
+                                    {
+                                        var recordIdList = string.Join(",", recordIds.Keys);
+                                        dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})");
+                                    }
                                 }
+                                dbContext.Database.ExecuteSqlCommand($"UPDATE [dbo].[BatchProcessRecord] SET [ProcessGuid] = NULL WHERE [ProcessGuid] = '{processGuid}'");
                             }
-                            
-                            // Processing finished, delete batch process records with this process guid
-                            dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}'");
                         }
+                    }
+                }
+
+                catch (TaskCanceledException ex)
+                {
+                    logger.Error($"The task was canceled: {ex}");
+                    if (ex.InnerException != null)
+                    {
+                        logger.Error($"Inner exception: {ex.InnerException}");
                     }
                 }
                 catch (Exception e)
@@ -75,6 +129,26 @@ namespace CampusLogicEvents.Web.Models
                     logger.Error($"An error occured while attempting to execute the batch process: {e}");
                     dbContext.Database.ExecuteSqlCommand($"UPDATE [dbo].[BatchProcessRecord] SET [ProcessGuid] = NULL WHERE [ProcessGuid] = '{processGuid}'");
                 }
+            }
+        }
+
+        /// <summary>
+		/// Send error notification and return
+		/// information to be logged back in web
+		/// layer
+		/// </summary>
+		/// <param name="operation"></param>
+		/// <param name="errorMessage"></param>
+		/// <returns></returns>
+		private static NotificationData SendErrorNotification(string operation, string errorMessage, Exception ex = null)
+        {
+            if (campusLogicConfigSection.SMTPSettings.NotificationsEnabled ?? false)
+            {
+                return ex == null ? notificationManager.SendErrorNotification(operation, errorMessage).Result : notificationManager.SendErrorNotification(operation, ex).Result;
+            }
+            else
+            {
+                return new NotificationData();
             }
         }
     }
