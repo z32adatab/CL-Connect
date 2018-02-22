@@ -51,3 +51,4 @@ App_Data/CampusLogic.mdf
 App_Data/CampusLogic_log.ldf
 ./bin/CampusLogicEvents.Web.dll.config
 *.bat
+$tf
