@@ -37,13 +37,14 @@
                  { 'field': 'filePath', title: 'File Path' },
                  { 'field': 'fileNameFormat', title: 'File Name Format' },
                  { 'field': 'batchExecutionMinutes', title: 'Batch Execution Minutes' },
+                 { 'field': 'fileDefinitionName', title: 'File Definition' },
                  {
                      command: [
                      {
                          template: kendo.template($("#add-batch-process-collection-template").html())
                      }
                      ],
-                     width: "10%"
+                     width: "120px"
                  }]
         };
         
@@ -64,7 +65,7 @@
         }
 
         function addBatchProcess(batchProcessingType) {
-            vm.addbatchprocessmodalcontroller.open(null, batchProcessingType).result.then(function () {
+            vm.addbatchprocessmodalcontroller.open(null, batchProcessingType, getDisplayName(batchProcessingType.typeName)).result.then(function () {
                 vm.refreshGrid(batchProcessingType.typeName);
             });
         }
@@ -75,7 +76,7 @@
         }
 
         function editBatchProcess(batchProcessingType, dataItem) {
-            vm.addbatchprocessmodalcontroller.open(dataItem, batchProcessingType)
+            vm.addbatchprocessmodalcontroller.open(dataItem, batchProcessingType, getDisplayName(batchProcessingType.typeName))
             .result.then(function () {
                 vm.refreshGrid(batchProcessingType.typeName);
             });

@@ -78,6 +78,11 @@ namespace CampusLogicEvents.Web.Models
                     var dictionary = GetApiEndpointNameLists(configurationModel.CampusLogicSection.EventNotificationsList, configurationModel.CampusLogicSection.ApiEndpointsList);
                     response.MissingApiEndpointName = !ValidateMissingApiEndpointNames(dictionary);
                 }
+                if (configurationModel.CampusLogicSection.FileDefinitionsEnabled ?? false)
+                {
+                    response.FileDefinitionSettingsValid = ValidateFileDefinitionSettings(configurationModel).IsSuccessStatusCode;
+                    response.ImproperFileDefinitions = CheckIfImproperFileDefinitions(configurationModel);
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
@@ -101,6 +106,75 @@ namespace CampusLogicEvents.Web.Models
             }
 
             return response;
+        }
+        
+        public static bool FileDefinitionExistsForName(string name, IList<FileDefinitionDto> fileDefinitions)
+        {
+            foreach (var fileDefinition in fileDefinitions)
+            {
+                if (fileDefinition.Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool CheckIfImproperFileDefinitions(ConfigurationModel configurationModel)
+        {
+            var campusLogicSection = configurationModel.CampusLogicSection;
+            var fileDefinitions = campusLogicSection.FileDefinitionsList;
+
+            var fileStoreSettings = campusLogicSection.FileStoreSettings;
+            if (fileStoreSettings.FileStoreEnabled ?? false)
+            {
+                if (!FileDefinitionExistsForName(fileStoreSettings.FileDefinitionName, fileDefinitions))
+                {
+                    return true;
+                }
+            }
+
+            var documentSettings = campusLogicSection.DocumentSettings;
+            if (documentSettings.DocumentsEnabled ?? false)
+            {
+                if (documentSettings.IndexFileEnabled ?? false)
+                {
+                    if (!FileDefinitionExistsForName(documentSettings.FileDefinitionName, fileDefinitions))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (campusLogicSection.BatchProcessingEnabled ?? false)
+            {
+                var batchProcessingTypesList = campusLogicSection.BatchProcessingTypesList;
+
+                for (var i = 0; i < batchProcessingTypesList.Count; i++)
+                {
+                    var batchProcessingType = batchProcessingTypesList[i];
+
+                    if (batchProcessingType.TypeName == ConfigConstants.AwardLetterPrintBatchType)
+                    {
+                        var batchProcesses = batchProcessingTypesList[i].BatchProcesses;
+
+                        for (var j = 0; j < batchProcesses.Count; j++)
+                        {
+                            var batchProcess = batchProcesses[j];
+                            if (batchProcess.IndexFileEnabled)
+                            {
+                                if (!FileDefinitionExistsForName(batchProcess.FileDefinitionName, fileDefinitions))
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -542,44 +616,7 @@ namespace CampusLogicEvents.Web.Models
                             throw new Exception();
                         }
                     }
-                    if (string.IsNullOrEmpty(settings.FileNameFormat))
-                    {
-                        throw new Exception();
-                    }
-
-                    if (settings.IncludeHeaderRecord == null)
-                    {
-                        throw new Exception();
-                    }
-
-                    if (string.IsNullOrEmpty(settings.IndexFileExtension))
-                    {
-                        throw new Exception();
-                    }
-
-                    if (string.IsNullOrEmpty(settings.IndexFileFormat))
-                    {
-                        throw new Exception();
-                    }
-
-                    if (settings.FieldMappingCollection.Count == 0)
-                    {
-                        throw new Exception();
-                    }
-                }
-
-                //loop through each field mapping
-                foreach (FieldMapSettings fieldMapping in settings.FieldMappingCollection)
-                {
-                    if (fieldMapping.FieldSize == null)
-                    {
-                        throw new Exception();
-                    }
-                    if (fieldMapping.DataType == null)
-                    {
-                        throw new Exception();
-                    }
-                    if (fieldMapping.FileFieldName == null)
+                    if (string.IsNullOrEmpty(settings.FileDefinitionName))
                     {
                         throw new Exception();
                     }
@@ -619,46 +656,15 @@ namespace CampusLogicEvents.Web.Models
                         throw new Exception();
                     }
                 }
-                if (string.IsNullOrEmpty(settings.FileStoreNameFormat))
+                
+                if (string.IsNullOrEmpty(settings.FileStoreMinutes))
                 {
                     throw new Exception();
                 }
 
-                if (settings.IncludeHeaderRecord == null)
+                if (string.IsNullOrEmpty(settings.FileDefinitionName))
                 {
                     throw new Exception();
-                }
-
-                if (string.IsNullOrEmpty(settings.FileExtension))
-                {
-                    throw new Exception();
-                }
-
-                if (string.IsNullOrEmpty(settings.FileStoreFileFormat))
-                {
-                    throw new Exception();
-                }
-
-                if (settings.FileStoreMappingCollection.Count == 0)
-                {
-                    throw new Exception();
-                }
-
-                //loop through each field mapping
-                foreach (FieldMapSettings fieldMapping in settings.FileStoreMappingCollection)
-                {
-                    if (fieldMapping.FieldSize == null)
-                    {
-                        throw new Exception();
-                    }
-                    if (fieldMapping.DataType == null)
-                    {
-                        throw new Exception();
-                    }
-                    if (fieldMapping.FileFieldName == null)
-                    {
-                        throw new Exception();
-                    }
                 }
             }
             catch (Exception exception)
@@ -772,6 +778,82 @@ namespace CampusLogicEvents.Web.Models
             catch (Exception exception)
             {
                 logger.Error(exception);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        public static HttpResponseMessage ValidateFileDefinitionSettings(ConfigurationModel configurationModel)
+        {
+            try
+            {
+                if (configurationModel.CampusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled == null)
+                {
+                    throw new Exception();
+                }
+
+                var fileDefinitions = configurationModel.CampusLogicSection.FileDefinitionsList;
+
+                if (fileDefinitions.Count == 0)
+                {
+                    throw new Exception();
+                }
+                else
+                {
+                    foreach (var fileDefinition in fileDefinitions)
+                    {
+                        if (string.IsNullOrEmpty(fileDefinition.Name))
+                        {
+                            throw new Exception();
+                        }
+                        if (string.IsNullOrEmpty(fileDefinition.FileNameFormat))
+                        {
+                            throw new Exception();
+                        }
+                        if (string.IsNullOrEmpty(fileDefinition.FileExtension))
+                        {
+                            throw new Exception();
+                        }
+                        if (string.IsNullOrEmpty(fileDefinition.FileFormat))
+                        {
+                            throw new Exception();
+                        }
+                        if (fileDefinition.FieldMappingCollection.Count == 0)
+                        {
+                            throw new Exception();
+                        }
+
+                        //loop through each field mapping
+                        foreach (FieldMapSettings fieldMapping in fileDefinition.FieldMappingCollection)
+                        {
+                            if (fieldMapping.FieldSize == null)
+                            {
+                                throw new Exception();
+                            }
+                            if (fieldMapping.DataType == null)
+                            {
+                                throw new Exception();
+                            }
+                            if (fieldMapping.FileFieldName == null)
+                            {
+                                throw new Exception();
+                            }
+                            if (fileDefinition.FileFormat == "xml" && fieldMapping.FileFieldName.Contains(" "))
+                            {
+                                throw new Exception();
+                            }
+                            if (fileDefinition.IncludeHeaderRecord && (fileDefinition.FileFormat == "csv" || fileDefinition.FileFormat == "csvnoquotes") && fieldMapping.FileFieldName.Contains(","))
+                            {
+                                throw new Exception();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
             }
 

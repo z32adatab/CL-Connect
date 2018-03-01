@@ -20,6 +20,7 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                     $scope.batchNameLengthValidation = false;
                     $scope.maxBatchSizeValidation = false;
                     $scope.batchExecutionMinutesValidation = false;
+                    $scope.batchSizeWithIndexValidation = false;
 
                     if (modalParams.theItem === undefined || modalParams.theItem === null) {
                         $scope.modelCopy = {
@@ -27,6 +28,8 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                             maxBatchSize: 0,
                             fileNameFormat: '',
                             batchExecutionMinutes: 0,
+                            indexFileEnabled: false,
+                            fileDefinitionName: null,
                             index: $scope.theList.length
                         };
 
@@ -59,13 +62,14 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                         $scope.batchNameLengthValidation = false;
                         $scope.maxBatchSizeValidation = false;
                         $scope.batchExecutionMinutesValidation = false;
+                        $scope.batchFileDefinitionNameValidation = false;
 
                         if ($rootScope.isNullOrWhitespace($scope.modelCopy.batchName)) {
                             formIsValid = false;
                             $scope.batchNameValidation = true;
                         }
 
-                        if ($scope.modelCopy.batchName.length > 25) {
+                        if ($scope.modelCopy.batchName && $scope.modelCopy.batchName.length > 25) {
                             formIsValid = false;
                             $scope.batchNameLengthValidation = true;
                         }
@@ -89,11 +93,21 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                             $scope.batchNameDuplicateValidation = true;
                         }
 
+                        if ($scope.modelCopy.indexFileEnabled == true && $rootScope.isNullOrWhitespace($scope.modelCopy.fileDefinitionName)) {
+                            formIsValid = false;
+                            $scope.batchFileDefinitionNameValidation = true;
+                        }
+
+                        if ($scope.modelCopy.indexFileEnabled == true && $scope.modelCopy.maxBatchSize != 1) {
+                            formIsValid = false;
+                            $scope.batchSizeWithIndexValidation = true;
+                        }
+
                         return formIsValid;
                     };
                 }],
 
-            open: function (dataItem, batchProcessingType) {
+            open: function (dataItem, batchProcessingType, displayName) {
                 // Open modal
                 var $modalInstance = $modal.open({
                     templateUrl: urlRoot + "/setup/template?templateName=AddBatchProcessModal",
@@ -102,7 +116,7 @@ clConnectServices.factory("addbatchprocessmodalcontroller", ["$modal",
                         modalParams: function () {
                             return {
                                 typeName: batchProcessingType.typeName,
-                                displayName: batchProcessingType.displayName,
+                                displayName: displayName,
                                 theItem: dataItem,
                                 theList: batchProcessingType.batchProcesses
                             };

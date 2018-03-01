@@ -30,6 +30,140 @@ namespace CampusLogicEvents.Web.WebAPI
         }
 
         /// <summary>
+        /// Deletes File Store and Document settings after being transferred to File Definitions.
+        /// </summary>
+        /// <param name="campusLogicSection"></param>
+        private void ClearOldFileDefinitions(CampusLogicSection campusLogicSection)
+        {
+            var fileStoreSettings = campusLogicSection.FileStoreSettings;
+            if (fileStoreSettings.FileStoreEnabled ?? false)
+            {
+                fileStoreSettings.FileStoreNameFormat = null;
+                fileStoreSettings.IncludeHeaderRecord = null;
+                fileStoreSettings.FileStoreFileFormat = null;
+                fileStoreSettings.FileExtension = null;
+                fileStoreSettings.FileStoreMappingCollectionConfig = null;
+            }
+
+            var documentSettings = campusLogicSection.DocumentSettings;
+            if (documentSettings.DocumentsEnabled ?? false)
+            {
+                documentSettings.FileNameFormat = null;
+                documentSettings.IncludeHeaderRecord = null;
+                documentSettings.IndexFileExtension = null;
+                documentSettings.IndexFileFormat = null;
+                documentSettings.FieldMappingCollectionConfig = null;
+            }
+        }
+
+        /// <summary>
+        /// Creates File Definition records for existing File Store and Document (Event Notification) settings and field mappings.
+        /// Assigns a unique name to each new File Definition record
+        /// and removes the original from the File Store/Document section.
+        /// This is all in-memory, so nothing is finalized until the user clicks Save in the setup.
+        /// </summary>
+        private void ConvertToFileDefinition(ConfigurationModel response)
+        {
+            // Convert the File Store settings
+            var fileStoreSettings = response.CampusLogicSection.FileStoreSettings;
+            if (fileStoreSettings.FileStoreEnabled ?? false)
+            {
+                // We can't convert if a File Store doesn't have any field mappings
+                if (fileStoreSettings.FileStoreMappingCollectionConfig.Count > 0)
+                {
+                    // Make sure we're enabling File Definitions
+                    response.CampusLogicSection.FileDefinitionsEnabled = true;
+
+                    var fileDefinitionSetting = new FileDefinitionSetting();
+
+                    // Create a unique name
+                    var fileDefinitionSettings = response.CampusLogicSection.FileDefinitionSettings.GetFileDefinitionSettings();
+                    bool uniqueNameGenerated = false;
+                    var index = 1;
+                    while (!uniqueNameGenerated)
+                    {
+                        var name = "FILE_STORE_DEFINITION_" + index;
+
+                        if (!fileDefinitionSettings.Any(f => f.Name == name))
+                        {
+                            fileDefinitionSetting.Name = name;
+                            uniqueNameGenerated = true;
+                        }
+
+                        index++;
+                    }
+
+                    // Update the File Store setting File Definition Name
+                    fileStoreSettings.FileDefinitionName = fileDefinitionSetting.Name;
+
+                    // Assign all the properties
+                    fileDefinitionSetting.FileNameFormat = fileStoreSettings.FileStoreNameFormat;
+                    fileDefinitionSetting.IncludeHeaderRecord = fileStoreSettings.IncludeHeaderRecord;
+                    fileDefinitionSetting.FileExtension = fileStoreSettings.FileExtension;
+                    fileDefinitionSetting.FileFormat = fileStoreSettings.FileStoreFileFormat;
+
+                    // Get all the field mappings
+                    foreach (FieldMapSettings fieldMapSetting in fileStoreSettings.FileStoreMappingCollectionConfig)
+                    {
+                        fileDefinitionSetting.FieldMappingCollectionConfig.Add(fieldMapSetting);
+                    }
+
+                    // Add the File Definition to memory
+                    response.CampusLogicSection.FileDefinitionsList.Add(new FileDefinitionDto(fileDefinitionSetting));
+                }
+            }
+
+            // Convert the Document settings
+            var documentSettings = response.CampusLogicSection.DocumentSettings;
+            if (documentSettings.DocumentsEnabled ?? false)
+            {
+                // We can't convert if a Document doesn't have any field mappings
+                if (documentSettings.FieldMappingCollectionConfig.Count > 0)
+                {
+                    // Make sure we're enabling File Definitions
+                    response.CampusLogicSection.FileDefinitionsEnabled = true;
+
+                    var fileDefinitionSetting = new FileDefinitionSetting();
+
+                    // Create a unique name
+                    var fileDefinitionSettings = response.CampusLogicSection.FileDefinitionSettings.GetFileDefinitionSettings();
+                    bool uniqueNameGenerated = false;
+                    var index = 1;
+                    while (!uniqueNameGenerated)
+                    {
+                        var name = "DOCUMENT_DEFINITION_" + index;
+
+                        if (!fileDefinitionSettings.Any(f => f.Name == name))
+                        {
+                            fileDefinitionSetting.Name = name;
+                            uniqueNameGenerated = true;
+                        }
+
+                        index++;
+                    }
+
+                    // Update the Document setting File Definition Name
+                    documentSettings.FileDefinitionName = fileDefinitionSetting.Name;
+
+                    // Assign all the properties
+                    fileDefinitionSetting.FileNameFormat = documentSettings.FileNameFormat;
+                    fileDefinitionSetting.IncludeHeaderRecord = documentSettings.IncludeHeaderRecord;
+                    fileDefinitionSetting.FileExtension = documentSettings.IndexFileExtension;
+                    fileDefinitionSetting.FileFormat = documentSettings.IndexFileFormat;
+
+                    // Get all the field mappings
+                    foreach (FieldMapSettings fieldMapSetting in documentSettings.FieldMappingCollectionConfig)
+                    {
+                        fileDefinitionSetting.FieldMappingCollectionConfig.Add(fieldMapSetting);
+                    }
+
+                    // Add the File Definition to memory
+                    response.CampusLogicSection.FileDefinitionsList.Add(new FileDefinitionDto(fileDefinitionSetting));
+                }
+            }
+        }
+
+        /// <summary>
         /// Get current configurations 
         /// from web.config
         /// or new configurations model
@@ -76,30 +210,49 @@ namespace CampusLogicEvents.Web.WebAPI
 
                 response.CampusLogicSection.DocumentSettings.DocumentsEnabled = response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? response.CampusLogicSection.DocumentSettings.IndexFileEnabled;
                 response.AppSettingsSection = appSettings;
-				//temp workaround for deserialization issue
-				response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
-																			|| (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
-																			|| (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
-																			|| (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
-																			|| (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
-																			|| (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
-																			|| (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false);																			
-                response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
-                response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
-                response.CampusLogicSection.StoredProcedureList =
-                    response.CampusLogicSection.StoredProcedures.GetStoredProcedures()
-                        .Select(sp => new StoredProcedureDto(sp.Name, sp.GetParameters().ToList()))
-                        .ToList();
+                //temp workaround for deserialization issue
+                response.CampusLogicSection.EventNotificationsEnabled = (response.CampusLogicSection.EventNotifications.EventNotificationsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled ?? false)
+                                                                            || (response.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
+                                                                            || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
+                                                                            || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
+                                                                            || (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled ?? false);
 
-                response.CampusLogicSection.BatchProcessingEnabled = response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
-                response.CampusLogicSection.BatchProcessingTypesList =
-                    response.CampusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes()
-                        .Select(b => new BatchProcessingTypeDto(b.TypeName, b.GetBatchProcesses().ToList()))
-                        .ToList();
+                if (response.CampusLogicSection.StoredProcedures != null)
+                {
+                    response.CampusLogicSection.StoredProceduresEnabled = response.CampusLogicSection.StoredProcedures.StoredProceduresEnabled;
+                    response.SmtpSection = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
+                    response.CampusLogicSection.StoredProcedureList =
+                        response.CampusLogicSection.StoredProcedures.GetStoredProcedures()
+                            .Select(sp => new StoredProcedureDto(sp.Name, sp.GetParameters().ToList()))
+                            .ToList();
+                }
 
-                response.CampusLogicSection.ApiIntegrationsEnabled = response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled;
-                response.CampusLogicSection.ApiIntegrationsList = response.CampusLogicSection.ApiIntegrations.GetApiIntegrations().Select(a => new ApiIntegrationDto(a)).ToList();
-                response.CampusLogicSection.ApiEndpointsList = response.CampusLogicSection.ApiEndpoints.GetEndpoints().Select(e => new ApiIntegrationEndpointDto(e)).ToList();
+                if (response.CampusLogicSection.BatchProcessingTypes != null)
+                {
+                    response.CampusLogicSection.BatchProcessingEnabled = response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled;
+                    response.CampusLogicSection.BatchProcessingTypesList =
+                        response.CampusLogicSection.BatchProcessingTypes.GetBatchProcessingTypes()
+                            .Select(b => new BatchProcessingTypeDto(b.TypeName, b.GetBatchProcesses().ToList()))
+                            .ToList();
+                }
+
+                if (response.CampusLogicSection.ApiIntegrations != null)
+                {
+                    response.CampusLogicSection.ApiIntegrationsEnabled = response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled;
+                    response.CampusLogicSection.ApiIntegrationsList = response.CampusLogicSection.ApiIntegrations.GetApiIntegrations().Select(a => new ApiIntegrationDto(a)).ToList();
+                    response.CampusLogicSection.ApiEndpointsList = response.CampusLogicSection.ApiEndpoints.GetEndpoints().Select(e => new ApiIntegrationEndpointDto(e)).ToList();
+                }
+
+                if (response.CampusLogicSection.FileDefinitionSettings != null)
+                {
+                    response.CampusLogicSection.FileDefinitionsEnabled = response.CampusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled;
+                    response.CampusLogicSection.FileDefinitionsList = response.CampusLogicSection.FileDefinitionSettings.GetFileDefinitionSettings().Select(f => new FileDefinitionDto(f)).ToList();
+                }
+
+                ConvertToFileDefinition(response);
 
                 if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
                 {
@@ -219,12 +372,33 @@ namespace CampusLogicEvents.Web.WebAPI
                             batchProcessElement.FilePath = batchProcess.FilePath;
                             batchProcessElement.FileNameFormat = batchProcess.FileNameFormat;
                             batchProcessElement.BatchExecutionMinutes = batchProcess.BatchExecutionMinutes;
+                            batchProcessElement.IndexFileEnabled = batchProcess.IndexFileEnabled;
+                            batchProcessElement.FileDefinitionName = batchProcess.FileDefinitionName;
                         }
 
                         batchProcessingTypeElement.Add(batchProcessElement);
                     }
 
                     campusLogicSection.BatchProcessingTypes.Add(batchProcessingTypeElement);
+                }
+
+                campusLogicSection.FileDefinitionSettings = configurationModel.CampusLogicSection.FileDefinitionSettings;
+                campusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled = configurationModel.CampusLogicSection.FileDefinitionsEnabled;
+                foreach (var listSetting in configurationModel.CampusLogicSection.FileDefinitionsList)
+                {
+                    FileDefinitionSetting fileDefinitionSetting = new FileDefinitionSetting();
+                    fileDefinitionSetting.Name = listSetting.Name;
+                    fileDefinitionSetting.FileNameFormat = listSetting.FileNameFormat;
+                    fileDefinitionSetting.IncludeHeaderRecord = listSetting.IncludeHeaderRecord;
+                    fileDefinitionSetting.FileExtension = listSetting.FileExtension;
+                    fileDefinitionSetting.FileFormat = listSetting.FileFormat;
+
+                    foreach (var fieldMapping in listSetting.FieldMappingCollection)
+                    {
+                        fileDefinitionSetting.FieldMappingCollectionConfig.Add(fieldMapping);
+                    }
+
+                    campusLogicSection.FileDefinitionSettings.Add(fileDefinitionSetting);
                 }
 
                 campusLogicSection.ApiIntegrations = configurationModel.CampusLogicSection.ApiIntegrations;
@@ -307,6 +481,9 @@ namespace CampusLogicEvents.Web.WebAPI
                     appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_PRODUCTION;
                     appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_APIURL_PRODUCTION;
                 }
+
+                ClearOldFileDefinitions(campusLogicSection);
+
                 config.Save();
                 return Request.CreateResponse(HttpStatusCode.OK);
 
@@ -350,7 +527,8 @@ namespace CampusLogicEvents.Web.WebAPI
                     InvalidBatchName = false,
                     FileMappingUploadValid = true,
                     BatchProcessingSettingsValid = true,
-                    ApiIntegrationsValid = true
+                    ApiIntegrationsValid = true,
+                    FileDefinitionSettingsValid = true
                 };
                 return Request.CreateResponse(HttpStatusCode.OK, newConfigurationValidationModel);
             }
@@ -414,10 +592,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.BatchProcessingSettingsValid != null && (bool)!response.BatchProcessingSettingsValid)
                     || (response.ApiIntegrationsValid != null && (bool)!response.ApiIntegrationsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
+                    || (response.FileDefinitionSettingsValid != null && (bool)!response.FileDefinitionSettingsValid)
                     || !response.ApiCredentialsValid
                     || response.InvalidBatchName
                     || response.MissingBatchName
-                    || response.MissingApiEndpointName)
+                    || response.MissingApiEndpointName
+                    || response.ImproperFileDefinitions)
                 {
                     return Request.CreateResponse(HttpStatusCode.ExpectationFailed, response);
                 }

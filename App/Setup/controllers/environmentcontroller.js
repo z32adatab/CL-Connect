@@ -38,6 +38,7 @@
                 $scope.service.configurationModel.campusLogicSection.awardLetterPrintSettings.awardLetterPrintEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.batchProcessingEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.apiIntegrationsEnabled = false;
+                $scope.service.configurationModel.campusLogicSection.fileDefinitionsEnabled = false;
             }
         }
 

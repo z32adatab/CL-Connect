@@ -450,7 +450,7 @@ namespace CampusLogicEvents.Web.Models
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                using (var httpClient = new System.Net.Http.HttpClient())
                 {
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                         Convert.ToBase64String(
@@ -491,7 +491,7 @@ namespace CampusLogicEvents.Web.Models
             try
             {
                 // Make the Web API call
-                using (var client = new HttpClient())
+                using (var client = new System.Net.Http.HttpClient())
                 {
                     // Build the form body that will be posted
                     var body = string.Format("wrap_name={0}&wrap_password={1}&wrap_scope={2}",
@@ -540,7 +540,7 @@ namespace CampusLogicEvents.Web.Models
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                using (var httpClient = new System.Net.Http.HttpClient())
                 {
                     var apiEndpoint = campusLogicConfigSection.ApiEndpoints.GetEndpoints().Where(e => e.Name == endpointName).FirstOrDefault();
                     if (apiEndpoint == null)

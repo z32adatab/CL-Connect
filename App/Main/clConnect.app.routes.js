@@ -133,6 +133,11 @@ angular.module('clConnectApp')
                     controller: "bulkActionController",
                     controllerAs: "vm"
                 })
+                .when("/filedefinitions", {
+                    templateUrl: urlRoot + "/setup/filedefinitions",
+                    controller: "fileDefinitionsController",
+                    controllerAs: "vm"
+                })
                 .otherwise({ redirectTo: "" });
 
             $provide.decorator("$location", ["$delegate", function ($delegate) {

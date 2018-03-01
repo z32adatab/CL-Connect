@@ -1,6 +1,6 @@
 ﻿<div class="modal-header"><h4>{{modalType}} {{displayName}} Batch Process</h4></div>
 <div class="modal-body">
-    <form ng-show="typeName == 'awardLetterPrint'">
+    <form ng-if="typeName == 'awardLetterPrint'">
         <div class="row padding-bottom-ten">
             <div class="col-md-4 text-right">
                 <label class="control-label">Batch Name</label>
@@ -17,8 +17,9 @@
                 <label class="control-label">Max Batch Size</label>
             </div>
             <div class="col-md-8">
-                <input type="text" id="maxBatchSize" name="maxBatchSize" kendo-numeric-text-box k-format="'n0'" k-min="1" k-max="200" ng-model="modelCopy.maxBatchSize" required />
+                <input type="text" id="maxBatchSize" name="maxBatchSize" kendo-numeric-text-box k-format="'n0'" k-min="1" k-max="200" ng-model="modelCopy.maxBatchSize" required /><br />
                 <span class="field-validation-error" ng-show="maxBatchSizeValidation == true">Required</span>
+                <span class="field-validation-error" ng-show="batchSizeWithIndexValidation == true">Max Batch Size must be 1 when Index File is enabled</span>
             </div>
         </div>
         <div class="row padding-bottom-ten">
@@ -26,7 +27,7 @@
                 <label class="control-label">File Path</label>
             </div>
             <div class="col-md-8">
-                <cl-folder-picker isrequired="true" formvalid="validationService.pageValidations.batchProcessingSettingsValid"  uploadpath="modelCopy.filePath"></cl-folder-picker>
+                <cl-folder-picker isrequired="true" formvalid="validationService.pageValidations.batchProcessingSettingsValid" uploadpath="modelCopy.filePath"></cl-folder-picker>
             </div>
         </div>
         <div class="row padding-bottom-ten">
@@ -44,6 +45,26 @@
             <div class="col-md-8">
                 <input type="text" id="batchExecutionMinutes" name="batchExecutionMinutes" kendo-numeric-text-box k-format="'n0'" k-min="1" ng-model="modelCopy.batchExecutionMinutes" required />
                 <span class="field-validation-error" ng-show="batchExecutionMinutesValidation == true">Required</span>
+            </div>
+        </div>
+        <div class="row padding-bottom-ten">
+            <div class="col-md-4 text-right">
+                <label class="control-label">Index File</label>
+            </div>
+            <div class="col-md-8">
+                <input type="radio" ng-value="true" ng-model="modelCopy.indexFileEnabled" style="width: 20px">Yes
+                <input type="radio" ng-value="false" ng-model="modelCopy.indexFileEnabled" style="width: 20px">No
+            </div>
+        </div>
+        <div ng-if="modelCopy.indexFileEnabled">
+            <div class="row padding-bottom-ten">
+                <div class="col-md-4 text-right">
+                    <label class="control-label">File Definition Name</label>
+                </div>
+                <div class="col-md-8">
+                    <input type="text" class="form-control" id="fileDefinitionName" name="fileDefinitionName" ng-model="modelCopy.fileDefinitionName" />
+                    <span class="field-validation-error" ng-show="batchFileDefinitionNameValidation == true">Required</span>
+                </div>
             </div>
         </div>
     </form>

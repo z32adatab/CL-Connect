@@ -87,12 +87,15 @@ namespace CampusLogicEvents.Web.Models
 
                                     if (recordIds.Count == size || processSingularly)
                                     {
-                                        var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name);
+                                        // Get event data for index file creation
+                                        var recordIdList = string.Join(",", recordIds.Keys);
+                                        var message = JsonConvert.DeserializeObject<EventNotificationData>(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First());
+
+                                        var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name, message);
                                         //If the response was successful remove those records from the db so
                                         //we do not continue to process them if the file fails
                                         if (response.IsSuccessStatusCode)
                                         {
-                                            var recordIdList = string.Join(",", recordIds.Keys);
                                             dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})");
                                         }
                                         recordIds.Clear();
@@ -102,10 +105,12 @@ namespace CampusLogicEvents.Web.Models
                                 // Process the last group of records that was smaller than the batch size
                                 if (recordIds.Any())
                                 {
-                                    var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name);
+                                    var recordIdList = string.Join(",", recordIds.Keys);
+                                    var message = JsonConvert.DeserializeObject<EventNotificationData>(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First());
+
+                                    var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name, message);
                                     if (response.IsSuccessStatusCode)
                                     {
-                                        var recordIdList = string.Join(",", recordIds.Keys);
                                         dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})");
                                     }
                                 }

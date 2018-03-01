@@ -24,6 +24,7 @@
         $scope.checkForMissingBatchName = $scope.validationService.checkForMissingBatchName;
         $scope.hasInvalidApiEndpointName = $scope.validationService.hasInvalidApiEndpointName;
         $scope.hasMissingApiEndpointName = $scope.validationService.hasMissingApiEndpointName;
+        $scope.hasImproperFileDefinitions = $scope.validationService.hasImproperFileDefinitions;
         $scope.disableSave = false;
         $scope.fail = false;
         $scope.duplicatePath = false;
@@ -31,6 +32,7 @@
         $scope.invalidBatchName = false;
         $scope.missingBatchName = false;
         $scope.missingApiEndpointName = false;
+        $scope.improperFileDefinitions = false;
 
         function getActiveStep(path) {
             $scope.activeStep = $location.path();
@@ -88,6 +90,7 @@
                     $scope.invalidBatchName = response.data.invalidBatchName;
                     $scope.missingBatchName = response.data.missingBatchName;
                     $scope.missingApiEndpointName = response.data.missingApiEndpointName;
+                    $scope.improperFileDefinitions = response.data.improperFileDefinitions;
                     $scope.disableSave = false;
                 });
             }
@@ -147,6 +150,9 @@
                     form = $scope.apiIntegrationForm;
                     break;
                 case '/bulkAction':
+                    break;
+                case '/filedefinitions':
+                    form = $scope.fileDefinitionsForm;
                     break;
                 default:
                     return;

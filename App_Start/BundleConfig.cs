@@ -18,8 +18,8 @@ namespace CampusLogicEvents.Web
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
                         "~/Scripts/modernizr-*"));
 
-            bundles.Add(new ScriptBundle("~/bundles/clConnect.main.js").Include(MainJsFiles));
-            bundles.Add(new ScriptBundle("~/bundles/clConnect.setup.js").Include(SetupJsFiles));
+            bundles.Add(new ScriptBundle("~/bundles/clConnectmain").Include(MainJsFiles));
+            bundles.Add(new ScriptBundle("~/bundles/clConnectsetup").Include(SetupJsFiles));
 
             bundles.Add(new StyleBundle("~/Content/css").Include("~/Content/site.css"));
 
@@ -27,9 +27,9 @@ namespace CampusLogicEvents.Web
             bundles.Add(new StyleBundle("~/Content/toastr").Include("~/Content/toastr.css", new CssRewriteUrlTransform()));
 
             // Kendo styles
-            bundles.Add(new StyleBundle("~/Content/kendo/2014.3.1316/css").Include(CssKendoFileNames)
-                .Include("~/Content/bootstrap.min.css", new CssRewriteUrlTransform())
-                .Include("~/Content/fontawesome/font-awesome.css", new CssRewriteUrlTransform()));
+            bundles.Add(new StyleBundle("~/Content/kendo/css").Include(CssKendoFileNames)
+            .Include("~/Content/bootstrap.min.css", new CssRewriteUrlTransform())
+            .Include("~/Content/fontawesome/font-awesome.css", new CssRewriteUrlTransform()));
 
             bundles.Add(new StyleBundle("~/Content/themes/base/css").Include(
                         "~/Content/themes/base/jquery.ui.core.css",
