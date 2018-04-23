@@ -68,10 +68,16 @@ namespace CampusLogicEvents.Web.Models
                                         dbContext.Database.ExecuteSqlCommand($"UPDATE[dbo].[BatchProcessRecord] SET [RetryCount] = [RetryCount] + 1, [RetryUpdatedDate] = '{now}'  FROM [dbo].[BatchProcessRecord] WHERE[Id] = {record.Id}");
                                     }
 
-                                    if (record.RetryCount > RETRY_MAX)
+                                    if (!eventData.AlRecordId.HasValue)
                                     {
-                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id:  {eventData.AlRecordId.Value}. Please contact your CampusLogic contact for next steps.");
-                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {eventData.AlRecordId.Value}.");
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has no AL-record-Id, record Id: {eventData.Id}. This likely means the notification event is not an AL event.  Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has no AL-record-Id, with award letter record Id: {eventData.Id}.  This likely means the notification event is not an AL event");
+                                        dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
+                                    }
+                                    else if (record.RetryCount > RETRY_MAX)
+                                    {
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id: {record.Id}, AL-record-Id: {eventData.AlRecordId}. Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {record.Id}, AL-record-Id: {eventData.AlRecordId}.");
                                         dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
                                     }
                                     else if (record.RetryCount == RETRY_MAX && retryTimeHasPassed)
