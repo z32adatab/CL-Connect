@@ -154,6 +154,9 @@
                 case '/filedefinitions':
                     form = $scope.fileDefinitionsForm;
                     break;
+                case '/powerfaids':
+                    form = $scope.powerFaidsForm;
+                    break;
                 default:
                     return;
             }

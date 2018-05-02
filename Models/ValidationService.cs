@@ -83,6 +83,10 @@ namespace CampusLogicEvents.Web.Models
                     response.FileDefinitionSettingsValid = ValidateFileDefinitionSettings(configurationModel).IsSuccessStatusCode;
                     response.ImproperFileDefinitions = CheckIfImproperFileDefinitions(configurationModel);
                 }
+                if (configurationModel.CampusLogicSection.PowerFaidsEnabled ?? false)
+                {
+                    response.PowerFaidsSettingsValid = ValidatePowerFaidsSettings(configurationModel).IsSuccessStatusCode;
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
@@ -360,7 +364,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint", "ApiIntegration" };
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint", "ApiIntegration", "PowerFAIDS" };
 
             if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
@@ -849,6 +853,70 @@ namespace CampusLogicEvents.Web.Models
                             }
                         }
                     }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        public static HttpResponseMessage ValidatePowerFaidsSettings(ConfigurationModel configurationModel)
+        {
+            try
+            {
+                if (configurationModel.CampusLogicSection.PowerFaidsEnabled == null)
+                {
+                    throw new Exception();
+                }
+
+                var settings = configurationModel.CampusLogicSection.PowerFaidsSettings;
+
+                if (settings != null)
+                {
+                    if (string.IsNullOrEmpty(settings.FilePath))
+                    {
+                        throw new Exception();
+                    }
+
+                    if (!settings.IsBatch.HasValue)
+                    {
+                        throw new Exception();
+                    }
+                    else
+                    {
+                        if (settings.IsBatch.Value == true && string.IsNullOrEmpty(settings.BatchExecutionMinutes))
+                        {
+                            throw new Exception();
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(settings.Outcome))
+                    {
+                        if (settings.Outcome == "documents" && (string.IsNullOrEmpty(settings.RequiredFor) || string.IsNullOrEmpty(settings.Status) || string.IsNullOrEmpty(settings.DocumentLock)))
+                        {
+                            throw new Exception();
+                        }
+                        else if (settings.Outcome == "verification" && (string.IsNullOrEmpty(settings.VerificationOutcome) || string.IsNullOrEmpty(settings.VerificationOutcomeLock)))
+                        {
+                            throw new Exception();
+                        }
+                        else if (settings.Outcome == "both" && (string.IsNullOrEmpty(settings.RequiredFor) || string.IsNullOrEmpty(settings.Status) || string.IsNullOrEmpty(settings.DocumentLock) || string.IsNullOrEmpty(settings.VerificationOutcome) || string.IsNullOrEmpty(settings.VerificationOutcomeLock)))
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                else
+                {
+                    throw new Exception();
                 }
             }
             catch (Exception e)

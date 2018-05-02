@@ -51,6 +51,14 @@
           <Property Name="Body" Type="nvarchar(max)" Nullable="false" />
           <Property Name="FailedSending" Type="bit" Nullable="false" />
         </EntityType>
+        <EntityType Name="PowerFaidsRecord">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Json" Type="varchar(max)" Nullable="false" />
+          <Property Name="ProcessGuid" Type="uniqueidentifier" />
+        </EntityType>
         <EntityType Name="ReceivedEvent">
           <Key>
             <PropertyRef Name="Id" />
@@ -195,6 +203,7 @@
           <EntitySet Name="EventNotification" EntityType="Self.EventNotification" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Log" EntityType="Self.Log" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="NotificationLog" EntityType="Self.NotificationLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PowerFaidsRecord" EntityType="Self.PowerFaidsRecord" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="ReceivedEvent" EntityType="Self.ReceivedEvent" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="AggregatedCounter" EntityType="Self.AggregatedCounter" Schema="HangFire" store:Type="Tables" />
           <EntitySet Name="Counter" EntityType="Self.Counter" Schema="HangFire" store:Type="Tables" />
@@ -245,6 +254,7 @@
           <EntitySet Name="NotificationLogs" EntityType="CampusLogicEvents.Model.NotificationLog" />
           <EntitySet Name="EventNotifications" EntityType="CampusLogicEvents.Model.EventNotification" />
           <EntitySet Name="BatchProcessRecords" EntityType="CampusLogicEvents.Model.BatchProcessRecord" />
+          <EntitySet Name="PowerFaidsRecords" EntityType="CampusLogicEvents.Model.PowerFaidsRecord" />
         </EntityContainer>
         <EntityType Name="AggregatedCounter">
           <Key>
@@ -435,6 +445,14 @@
           <Property Name="RetryCount" Type="Int32" />
           <Property Name="RetryUpdatedDate" Type="DateTime" Precision="3" />
         </EntityType>
+        <EntityType Name="PowerFaidsRecord">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Json" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="false" />
+          <Property Name="ProcessGuid" Type="Guid" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -610,6 +628,15 @@
                 <ScalarProperty Name="Message" ColumnName="Message" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PowerFaidsRecords">
+            <EntityTypeMapping TypeName="CampusLogicEvents.Model.PowerFaidsRecord">
+              <MappingFragment StoreEntitySet="PowerFaidsRecord">
+                <ScalarProperty Name="ProcessGuid" ColumnName="ProcessGuid" />
+                <ScalarProperty Name="Json" ColumnName="Json" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>

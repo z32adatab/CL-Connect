@@ -40,6 +40,7 @@
             testBatchProcessingSettings: testBatchProcessingSettings,
             testApiIntegrations: testApiIntegrations,
             testFileDefinitions: testFileDefinitions,
+            testPowerFaids: testPowerFaids,
             folderPathUnique: folderPathUnique,
             testFolderPath: testFolderPath,
             checkForDuplicateEvent: checkForDuplicateEvent,
@@ -297,6 +298,10 @@
                 }
             }
 
+            if (setupservice.configurationModel.campusLogicSection.powerFaidsSettings.powerFaidsEnabled) {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.powerFaidsSettings.filePath);
+            }
+
             if (uploadpath) {
                 var matches = $.grep(filePathValues, function (filePath) {
                     return uploadpath.toUpperCase() === filePath.toUpperCase();
@@ -399,6 +404,9 @@
                 case '/filedefinitions':
                     service.testFileDefinitions();
                     break;
+                case '/powerfaids':
+                    service.testPowerFaids();
+                    break;
                 default:
                     return;
             }
@@ -449,6 +457,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.fileDefinitionsEnabled) {
                 service.testFileDefinitions();
+            }
+            if (setupservice.configurationModel.campusLogicSection.powerFaidsEnabled) {
+                service.testPowerFaids();
             }
         }
 
@@ -927,6 +938,40 @@
                         }
                     }
                 }
+            }
+        }
+
+        function testPowerFaids(form) {
+            service.pageValidations.powerFaidsSettingsValid = true;
+            var settings = setupservice.configurationModel.campusLogicSection.powerFaidsSettings;
+
+            if (settings) {
+                if (!settings.filePath) {
+                    service.pageValidations.powerFaidsSettingsValid = false;
+                }
+
+                if (settings.isBatch == null) {
+                    service.pageValidations.powerFaidsSettingsValid = false;
+                } else {
+                    if (settings.isBatch && !settings.batchExecutionMinutes) {
+                        service.pageValidations.powerFaidsSettingsValid = false;
+                    }
+                }
+
+
+                if (settings.outcome) {
+                    if (settings.outcome === "documents" && (!settings.requiredFor || !settings.status || !settings.documentLock)) {
+                        service.pageValidations.powerFaidsSettingsValid = false;
+                    } else if (settings.outcome === "verification" && (!settings.verificationOutcome || !settings.verificationOutcomeLock)) {
+                        service.pageValidations.powerFaidsSettingsValid = false;
+                    } else if (settings.outcome === "both" && (!settings.requiredFor || !settings.status || !settings.documentLock || !settings.verificationOutcome || !settings.verificationOutcomeLock)) {
+                        service.pageValidations.powerFaidsSettingsValid = false;
+                    }    
+                } else {
+                    service.pageValidations.powerFaidsSettingsValid = false;
+                }
+            } else {
+                service.pageValidations.powerFaidsSettingsValid = false;
             }
         }
 

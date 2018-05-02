@@ -18,6 +18,8 @@ using System.Web;
 using System.Text;
 using System.Net;
 using System.Net.Http.Headers;
+using System.IO;
+using System.Xml.Linq;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -236,6 +238,10 @@ namespace CampusLogicEvents.Web.Models
                         {
                             ApiIntegrationsHandler(eventHandler.ApiEndpointName, eventData);
                         }
+                        else if (eventHandler.HandleMethod == "PowerFAIDS")
+                        {
+                            PowerFaidsHandler(eventData);
+                        }
                     }
 
                     //Update the received event with a processed date time
@@ -251,6 +257,71 @@ namespace CampusLogicEvents.Web.Models
             {
                 //Log here any exceptions
                 logger.ErrorFormat("DataService ProcessPostedEvent Error: {0}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Handles PowerFAIDS integration.
+        /// Will either queue up the eventData to be written to a file later
+        /// or save the single record as an XML file.
+        /// </summary>
+        /// <param name="eventData"></param>
+        private static void PowerFaidsHandler(EventNotificationData eventData)
+        {
+            try
+            {
+                // Get the settings the user has defined for PowerFAIDS
+                var settings = campusLogicConfigSection.PowerFaidsSettings;
+
+                var awardYearToken = eventData.AwardYear;
+
+                if (!string.IsNullOrEmpty(awardYearToken))
+                {
+                    awardYearToken = awardYearToken.Split('-')[0];
+                }
+
+                var recordToProcess = new PowerFaidsDto()
+                {
+                    EventId = eventData.Id,
+                    AwardYearToken = awardYearToken,
+                    AlternateId = eventData.StudentId,
+                    FilePath = settings.FilePath,
+                    Outcome = settings.Outcome,
+                    ShortName = eventData.DocumentName,
+                    RequiredFor = settings.RequiredFor,
+                    Status = settings.Status,
+                    EffectiveDate = eventData.DateTimeUtc.ToString("yyyy-MM-dd"),
+                    DocumentLock = settings.DocumentLock,
+                    VerificationOutcome = settings.VerificationOutcome,
+                    VerificationOutcomeLock = settings.VerificationOutcomeLock
+                };
+                
+                if (settings.IsBatch.Value == false)
+                {
+                    try
+                    {
+                        PowerFaidsService.ProcessPowerFaidsRecords(new List<PowerFaidsDto>() { recordToProcess });
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception($"Error occurred while processing PowerFAIDS record. EventId: {recordToProcess.EventId}");
+                    }
+                }
+                else
+                {
+                    var json = JsonConvert.SerializeObject(recordToProcess).Replace("'", "''");
+
+                    using (var dbContext = new CampusLogicContext())
+                    {
+                        // Insert the record into the PowerFaidsRecord table so that it can be processed by the Automated PowerFAIDS job.
+                        dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[PowerFaidsRecord]([Json], [ProcessGuid]) VALUES('{json}', NULL)");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                NotificationService.ErrorNotification("PowerFAIDS", e);
                 throw;
             }
         }
