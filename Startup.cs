@@ -613,7 +613,7 @@ namespace CampusLogicEvents.Web
 
             bool? powerFaidsEnabled = campusLogicSection.PowerFaidsSettings.PowerFaidsEnabled;
 
-            if (powerFaidsEnabled == true)
+            if (powerFaidsEnabled == true && campusLogicSection.PowerFaidsSettings != null && campusLogicSection.PowerFaidsSettings.IsBatch == true && !string.IsNullOrEmpty(campusLogicSection.PowerFaidsSettings.BatchExecutionMinutes))
             {
                 //Set reoccurance based on configs
                 RecurringJob.AddOrUpdate(() => PowerFaidsService.RunBatchPowerFaidsProcess(), "*/" + campusLogicSection.PowerFaidsSettings.BatchExecutionMinutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
