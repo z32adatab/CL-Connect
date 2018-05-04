@@ -253,12 +253,17 @@ namespace CampusLogicEvents.Web.WebAPI
                     response.CampusLogicSection.FileDefinitionsList = response.CampusLogicSection.FileDefinitionSettings.GetFileDefinitionSettings().Select(f => new FileDefinitionDto(f)).ToList();
                 }
 
+                ConvertToFileDefinition(response);
+
                 if (response.CampusLogicSection.PowerFaidsSettings != null)
                 {
                     response.CampusLogicSection.PowerFaidsEnabled = response.CampusLogicSection.PowerFaidsSettings.PowerFaidsEnabled;
+                    response.CampusLogicSection.PowerFaidsList = new List<PowerFaidsDto>();
+                    foreach (var powerFaidSetting in response.CampusLogicSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.GetPowerFaidsSettingList())
+                    {
+                        response.CampusLogicSection.PowerFaidsList.Add(new PowerFaidsDto(powerFaidSetting));
+                    }
                 }
-
-                ConvertToFileDefinition(response);
 
                 if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
                 {
@@ -439,7 +444,21 @@ namespace CampusLogicEvents.Web.WebAPI
 
                 campusLogicSection.PowerFaidsSettings = configurationModel.CampusLogicSection.PowerFaidsSettings;
                 campusLogicSection.PowerFaidsSettings.PowerFaidsEnabled = configurationModel.CampusLogicSection.PowerFaidsEnabled;
-				campusLogicSection.BulkActionSettings = configurationModel.CampusLogicSection.BulkActionSettings;
+                foreach (var record in configurationModel.CampusLogicSection.PowerFaidsList)
+                {
+                    PowerFaidsSetting powerFaidsSetting = new PowerFaidsSetting();
+                    powerFaidsSetting.Event = record.Event;
+                    powerFaidsSetting.Outcome = record.Outcome;
+                    powerFaidsSetting.RequiredFor = record.RequiredFor;
+                    powerFaidsSetting.Status = record.Status;
+                    powerFaidsSetting.DocumentLock = record.DocumentLock;
+                    powerFaidsSetting.VerificationOutcome = record.VerificationOutcome;
+                    powerFaidsSetting.VerificationOutcomeLock = record.VerificationOutcomeLock;
+
+                    campusLogicSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.Add(powerFaidsSetting);
+                }
+
+                campusLogicSection.BulkActionSettings = configurationModel.CampusLogicSection.BulkActionSettings;
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;

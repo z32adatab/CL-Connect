@@ -8,7 +8,7 @@
             <b>PowerFAIDS</b>
         </h2>
         <section>
-            This step will allow you to configure the output of an XML file compatible with PowerFAIDS. 
+            This step will allow you to configure the output of an XML file compatible with PowerFAIDS.
             The file can either be generated per student or as a batch process to contain multiple students in one file.
             For additional information, see <a href="https://campuslogicinc.freshdesk.com/" target="_blank">PowerFAIDS help.</a>
         </section>
@@ -16,7 +16,7 @@
         <!-- File Path -->
         <div class="row">
             <div class="col-md-12">
-                <label class="control-label">File Path:</label>
+                <label class="control-label">File Path</label>
                 <cl-folder-picker isrequired="true" formvalid="vm.pageValid" uploadpath="vm.powerFaidsSettings.filePath"></cl-folder-picker>
             </div>
         </div>
@@ -40,114 +40,33 @@
                 <input id="batchExecutionMinutes"
                        name="batchExecutionMinutes"
                        type="text"
-                       kendo-numeric-text-box k-format="'n0'" 
+                       kendo-numeric-text-box k-format="'n0'"
                        k-min="1"
                        ng-model="vm.powerFaidsSettings.batchExecutionMinutes"
                        required />
                 <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.batchExecutionMinutes.$dirty) && powerFaidsForm.batchExecutionMinutes.$error.required">Required</span>
             </div>
         </div>
-
-        <!-- Outcome -->
+        <div class="row"><div class="col-md-12"><hr /></div></div>
         <div class="row" style="margin-top:16px;">
-            <div class="col-md-4">
-                <label class="control-label">Outcome:</label>
-                <select id="outcome"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="outcome"
-                        ng-model="vm.powerFaidsSettings.outcome">
-                    <option value="">Select an outcome...</option>
-                    <option value="documents">Documents</option>
-                    <option value="verification">Verification Information</option>
-                    <option value="both">Both Documents and Verification Information</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.outcome.$dirty) && powerFaidsForm.outcome.$error.required">Required</span>
+            <div class="col-md-12">
+                <div id="powerfaids-grid" kendo-grid
+                     data-role="grid"
+                     data-editable="false"
+                     k-data-source="vm.powerFaidsList"
+                     k-options="vm.gridOptions">
+                </div>
+                <span class="field-validation-error" ng-show="!vm.pageValid && (!vm.powerFaidsList || vm.powerFaidsList.length == 0)">At least one record is requried.</span>
+                <span class="field-validation-error" ng-show="!vm.pageValid && vm.powerFaidsList.length > 0">Please ensure all events are unique and defined in Event Notifications.</span>
             </div>
-        </div>
-        <!-- Document Or Both -->
-        <div class="row" ng-if="vm.powerFaidsSettings.outcome === 'documents' || vm.powerFaidsSettings.outcome === 'both'" style="margin-top:16px">
-            <div class="col-md-4">
-                <label class="control-label">Required For:</label>
-                <select id="requiredFor"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="requiredFor"
-                        ng-model="vm.powerFaidsSettings.requiredFor">
-                    <option value="">Select an option...</option>
-                    <option value="D">Disbursement</option>
-                    <option value="P">Packaging</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.requiredFor.$dirty) && powerFaidsForm.requiredFor.$error.required">Required</span>
-            </div>
-            <div class="col-md-4">
-                <label class="control-label">Status:</label>
-                <select id="status"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="status"
-                        ng-model="vm.powerFaidsSettings.status">
-                    <option value="">Select a status...</option>
-                    <option value="1">Received</option>
-                    <option value="2">Not Reviewed</option>
-                    <option value="3">Approved</option>
-                    <option value="4">Incomplete</option>
-                    <option value="5">Not Received</option>
-                    <option value="6">Not Signed</option>
-                    <option value="7">Waived</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.status.$dirty) && powerFaidsForm.status.$error.required">Required</span>
-            </div>
-            <div class="col-md-4">
-                <label class="control-label">Document Lock:</label>
-                <select id="documentLock"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="documentLock"
-                        ng-model="vm.powerFaidsSettings.documentLock">
-                    <option value="">Select an option...</option>
-                    <option value="Y">Locked</option>
-                    <option value="N">Unlocked</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.documentLock.$dirty) && powerFaidsForm.documentLock.$error.required">Required</span>
-            </div>
-        </div>
-        <!-- Verification or Both -->
-        <div class="row" ng-if="vm.powerFaidsSettings.outcome === 'verification' || vm.powerFaidsSettings.outcome === 'both'" style="margin-top:16px">
-            <div class="col-md-4">
-                <label class="control-label">Verification Outcome:</label>
-                <select id="verificationOutcome"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="verificationOutcome"
-                        ng-model="vm.powerFaidsSettings.verificationOutcome">
-                    <option value="">Select an option...</option>
-                    <option value="N">Not Performed</option>
-                    <option value="S">Selected; Not Verified</option>
-                    <option value="V">Verified</option>
-                    <option value="W">Without Documentation</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.verificationOutcome.$dirty) && powerFaidsForm.verificationOutcome.$error.required">Required</span>
-            </div>
-            <div class="col-md-4">
-                <label class="control-label">Verification Outcome Lock:</label>
-                <select id="verificationOutcomeLock"
-                        required
-                        kendo-drop-down-list
-                        class="form-control input-lg height-100"
-                        name="verificationOutcomeLock"
-                        ng-model="vm.powerFaidsSettings.verificationOutcomeLock">
-                    <option value="">Select an option...</option>
-                    <option value="Y">Locked</option>
-                    <option value="N">Unlocked</option>
-                </select>
-                <span class="field-validation-error" ng-show="(!vm.pageValid || powerFaidsForm.verificationOutcomeLock.$dirty) && powerFaidsForm.verificationOutcomeLock.$error.required">Required</span>
+            <div class="col-md-12" style="margin-top:8px;">
+                <button class="btn btn-default" ng-click="vm.addPowerFaidsRecord()">Add</button>
             </div>
         </div>
     </div>
+
+    <script id="powerfaids-collection-template" type="text/x-kendo-template">
+        <button class="btn btn-default" ng-click="vm.editPowerFaidsRecord(dataItem)" title="Edit"><i class="fa fa-pencil"></i></button>
+        <button class="btn btn-default" ng-click="vm.deletePowerFaidsRecord(dataItem)" title="Delete"><i class="fa fa-trash"></i></button>
+    </script>
 </form>

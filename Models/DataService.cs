@@ -272,7 +272,7 @@ namespace CampusLogicEvents.Web.Models
             try
             {
                 // Get the settings the user has defined for PowerFAIDS
-                var settings = campusLogicConfigSection.PowerFaidsSettings;
+                var generalSettings = campusLogicConfigSection.PowerFaidsSettings;
 
                 var awardYearToken = eventData.AwardYear;
 
@@ -281,42 +281,53 @@ namespace CampusLogicEvents.Web.Models
                     awardYearToken = awardYearToken.Split('-')[0];
                 }
 
-                var recordToProcess = new PowerFaidsDto()
+                var eventSettings = campusLogicConfigSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.GetPowerFaidsSettingList();
+
+                var eventSetting = eventSettings.Where(e => e.Event == eventData.EventNotificationId.ToString()).FirstOrDefault();
+
+                if (eventSetting != null)
                 {
-                    EventId = eventData.Id,
-                    AwardYearToken = awardYearToken,
-                    AlternateId = eventData.StudentId,
-                    FilePath = settings.FilePath,
-                    Outcome = settings.Outcome,
-                    ShortName = eventData.DocumentName,
-                    RequiredFor = settings.RequiredFor,
-                    Status = settings.Status,
-                    EffectiveDate = eventData.DateTimeUtc.ToString("yyyy-MM-dd"),
-                    DocumentLock = settings.DocumentLock,
-                    VerificationOutcome = settings.VerificationOutcome,
-                    VerificationOutcomeLock = settings.VerificationOutcomeLock
-                };
-                
-                if (settings.IsBatch.Value == false)
-                {
-                    try
+                    var recordToProcess = new PowerFaidsDto()
                     {
-                        PowerFaidsService.ProcessPowerFaidsRecords(new List<PowerFaidsDto>() { recordToProcess });
+                        EventId = eventData.Id,
+                        AwardYearToken = awardYearToken,
+                        AlternateId = eventData.StudentId,
+                        FilePath = generalSettings.FilePath,
+                        Outcome = eventSetting.Outcome,
+                        ShortName = eventData.DocumentName,
+                        RequiredFor = eventSetting.RequiredFor,
+                        Status = eventSetting.Status,
+                        EffectiveDate = eventData.DateTimeUtc.ToString("yyyy-MM-dd"),
+                        DocumentLock = eventSetting.DocumentLock,
+                        VerificationOutcome = eventSetting.VerificationOutcome,
+                        VerificationOutcomeLock = eventSetting.VerificationOutcomeLock
+                    };
+
+                    if (generalSettings.IsBatch.Value == false)
+                    {
+                        try
+                        {
+                            PowerFaidsService.ProcessPowerFaidsRecords(new List<PowerFaidsDto>() { recordToProcess });
+                        }
+                        catch (Exception)
+                        {
+                            throw new Exception($"Error occurred while processing PowerFAIDS record. EventId: {recordToProcess.EventId}");
+                        }
                     }
-                    catch (Exception)
+                    else
                     {
-                        throw new Exception($"Error occurred while processing PowerFAIDS record. EventId: {recordToProcess.EventId}");
+                        var json = JsonConvert.SerializeObject(recordToProcess).Replace("'", "''");
+
+                        using (var dbContext = new CampusLogicContext())
+                        {
+                            // Insert the record into the PowerFaidsRecord table so that it can be processed by the Automated PowerFAIDS job.
+                            dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[PowerFaidsRecord]([Json], [ProcessGuid]) VALUES('{json}', NULL)");
+                        }
                     }
                 }
                 else
                 {
-                    var json = JsonConvert.SerializeObject(recordToProcess).Replace("'", "''");
-
-                    using (var dbContext = new CampusLogicContext())
-                    {
-                        // Insert the record into the PowerFaidsRecord table so that it can be processed by the Automated PowerFAIDS job.
-                        dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[PowerFaidsRecord]([Json], [ProcessGuid]) VALUES('{json}', NULL)");
-                    }
+                    throw new Exception($"Error occured while processing PowerFAIDS record. Cannot find mapping for Event Notification: {eventData.EventNotificationId}");
                 }
             }
             catch (Exception e)

@@ -958,21 +958,47 @@
                     }
                 }
 
+                var powerFaidsList = setupservice.configurationModel.campusLogicSection.powerFaidsList;
 
-                if (settings.outcome) {
-                    if (settings.outcome === "documents" && (!settings.requiredFor || !settings.status || !settings.documentLock)) {
-                        service.pageValidations.powerFaidsSettingsValid = false;
-                    } else if (settings.outcome === "verification" && (!settings.verificationOutcome || !settings.verificationOutcomeLock)) {
-                        service.pageValidations.powerFaidsSettingsValid = false;
-                    } else if (settings.outcome === "both" && (!settings.requiredFor || !settings.status || !settings.documentLock || !settings.verificationOutcome || !settings.verificationOutcomeLock)) {
-                        service.pageValidations.powerFaidsSettingsValid = false;
-                    }    
+                if (powerFaidsList && powerFaidsList.length > 0) {
+                    for (var i = 0; i < powerFaidsList.length; i++) {
+                        if (powerFaidsList[i].event) {
+                            // Check for uniqueness of events
+                            for (var j = 0; j < powerFaidsList.length; j++) {
+                                if (j !== i && powerFaidsList[j].event === powerFaidsList[i].event) {
+                                    service.pageValidations.powerFaidsSettingsValid = false;
+                                }
+                            }
+
+                            // Ensure the event is mapped
+                            if (!setupservice.configurationModel.campusLogicSection.eventNotifications.find(function (event) {
+                                return event.eventNotificationId == powerFaidsList[i].event;
+                            }))
+                            {
+                                service.pageValidations.powerFaidsSettingsValid = false;
+                            }
+
+                            if (powerFaidsList[i].outcome) {
+                                if (powerFaidsList[i].outcome === "documents" && (!powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock)) {
+                                    service.pageValidations.powerFaidsSettingsValid = false;
+                                } else if (powerFaidsList[i].outcome === "verification" && (!powerFaidsList[i].verificationOutcome || !powerFaidsList[i].verificationOutcomeLock)) {
+                                    service.pageValidations.powerFaidsSettingsValid = false;
+                                } else if (powerFaidsList[i].outcome === "both" && (!powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock || !powerFaidsList[i].verificationOutcome || !powerFaidsList[i].verificationOutcomeLock)) {
+                                    service.pageValidations.powerFaidsSettingsValid = false;
+                                }
+                            } else {
+                                service.pageValidations.powerFaidsSettingsValid = false;
+                            }
+                        } else {
+                            service.pageValidations.powerFaidsSettingsValid = false;
+                        }
+                    }
                 } else {
                     service.pageValidations.powerFaidsSettingsValid = false;
                 }
             } else {
                 service.pageValidations.powerFaidsSettingsValid = false;
-            }
+            }            
         }
 
         function checkForEmptyOrNullString(obj) {

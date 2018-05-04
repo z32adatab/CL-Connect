@@ -894,19 +894,55 @@ namespace CampusLogicEvents.Web.Models
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(settings.Outcome))
+                    var powerFaidsList = configurationModel.CampusLogicSection.PowerFaidsList;
+
+                    if (powerFaidsList != null && powerFaidsList.Count > 0)
                     {
-                        if (settings.Outcome == "documents" && (string.IsNullOrEmpty(settings.RequiredFor) || string.IsNullOrEmpty(settings.Status) || string.IsNullOrEmpty(settings.DocumentLock)))
+                        for (int i = 0; i < powerFaidsList.Count; i++)
                         {
-                            throw new Exception();
-                        }
-                        else if (settings.Outcome == "verification" && (string.IsNullOrEmpty(settings.VerificationOutcome) || string.IsNullOrEmpty(settings.VerificationOutcomeLock)))
-                        {
-                            throw new Exception();
-                        }
-                        else if (settings.Outcome == "both" && (string.IsNullOrEmpty(settings.RequiredFor) || string.IsNullOrEmpty(settings.Status) || string.IsNullOrEmpty(settings.DocumentLock) || string.IsNullOrEmpty(settings.VerificationOutcome) || string.IsNullOrEmpty(settings.VerificationOutcomeLock)))
-                        {
-                            throw new Exception();
+                            var record = powerFaidsList[i];
+
+                            if (!string.IsNullOrEmpty(record.Event))
+                            {
+                                // Check for uniqueness of Event Notification ID
+                                for (int j = 0; j < powerFaidsList.Count; j++)
+                                {
+                                    if (j != i && powerFaidsList[j].Event == record.Event)
+                                    {
+                                        throw new Exception();
+                                    }
+                                }
+
+                                // Ensure the event is mapped
+                                if (!configurationModel.CampusLogicSection.EventNotificationsList.Any(e => e.EventNotificationId.ToString() == record.Event))
+                                {
+                                    throw new Exception();
+                                }
+
+                                if (!string.IsNullOrEmpty(record.Outcome))
+                                {
+                                    if (record.Outcome == "documents" && (string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                    else if (record.Outcome == "verification" && (string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                    else if (record.Outcome == "both" && (string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock) || string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                }
+                                else
+                                {
+                                    throw new Exception();
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
                         }
                     }
                     else
