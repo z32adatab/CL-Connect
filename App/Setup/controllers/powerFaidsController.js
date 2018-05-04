@@ -33,6 +33,17 @@
                     }
                 },
                 {
+                    'field': 'shortName', title: 'Short Name', template: function (dataItem) {
+                        switch (dataItem.outcome) {
+                            case "documents":
+                            case "both":
+                                return dataItem.shortName;
+                            default:
+                                return "N/A";
+                        }
+                    }
+                },
+                {
                     'field': 'requiredFor', title: 'Required For', template: function (dataItem) {
                         switch (dataItem.requiredFor) {
                             case "D":

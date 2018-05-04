@@ -35,6 +35,17 @@
         <div ng-if="modelCopy.outcome === 'documents' || modelCopy.outcome === 'both'">
             <div class="row" style="margin-top:16px">
                 <div class="col-md-12">
+                    <label class="control-label">Short Name</label>
+                    <input name="shortName"
+                           id="shortName"
+                           class="form-control"
+                           ng-model="modelCopy.shortName"
+                           required />
+                    <span class="field-validation-error" ng-show="(submitted || powerFaidsModalForm.shortName.$dirty) && powerFaidsModalForm.shortName.$error.required">Required</span>
+                </div>
+            </div>
+            <div class="row" style="margin-top:16px">
+                <div class="col-md-12">
                     <label class="control-label">Required For</label>
                     <select id="requiredFor"
                             ng-required="true"

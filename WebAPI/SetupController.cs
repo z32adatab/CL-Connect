@@ -449,6 +449,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     PowerFaidsSetting powerFaidsSetting = new PowerFaidsSetting();
                     powerFaidsSetting.Event = record.Event;
                     powerFaidsSetting.Outcome = record.Outcome;
+                    powerFaidsSetting.ShortName = record.ShortName;
                     powerFaidsSetting.RequiredFor = record.RequiredFor;
                     powerFaidsSetting.Status = record.Status;
                     powerFaidsSetting.DocumentLock = record.DocumentLock;

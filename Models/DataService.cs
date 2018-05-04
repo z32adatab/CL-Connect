@@ -294,7 +294,7 @@ namespace CampusLogicEvents.Web.Models
                         AlternateId = eventData.StudentId,
                         FilePath = generalSettings.FilePath,
                         Outcome = eventSetting.Outcome,
-                        ShortName = eventData.DocumentName,
+                        ShortName = eventSetting.ShortName,
                         RequiredFor = eventSetting.RequiredFor,
                         Status = eventSetting.Status,
                         EffectiveDate = eventData.DateTimeUtc.ToString("yyyy-MM-dd"),

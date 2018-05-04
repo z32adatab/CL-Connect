@@ -921,7 +921,7 @@ namespace CampusLogicEvents.Web.Models
 
                                 if (!string.IsNullOrEmpty(record.Outcome))
                                 {
-                                    if (record.Outcome == "documents" && (string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock)))
+                                    if (record.Outcome == "documents" && (string.IsNullOrEmpty(record.ShortName) || string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock)))
                                     {
                                         throw new Exception();
                                     }
@@ -929,7 +929,7 @@ namespace CampusLogicEvents.Web.Models
                                     {
                                         throw new Exception();
                                     }
-                                    else if (record.Outcome == "both" && (string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock) || string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
+                                    else if (record.Outcome == "both" && (string.IsNullOrEmpty(record.ShortName) || string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock) || string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
                                     {
                                         throw new Exception();
                                     }

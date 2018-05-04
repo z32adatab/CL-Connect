@@ -979,11 +979,11 @@
                             }
 
                             if (powerFaidsList[i].outcome) {
-                                if (powerFaidsList[i].outcome === "documents" && (!powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock)) {
+                                if (powerFaidsList[i].outcome === "documents" && (!powerFaidsList[i].shortName || !powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock)) {
                                     service.pageValidations.powerFaidsSettingsValid = false;
                                 } else if (powerFaidsList[i].outcome === "verification" && (!powerFaidsList[i].verificationOutcome || !powerFaidsList[i].verificationOutcomeLock)) {
                                     service.pageValidations.powerFaidsSettingsValid = false;
-                                } else if (powerFaidsList[i].outcome === "both" && (!powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock || !powerFaidsList[i].verificationOutcome || !powerFaidsList[i].verificationOutcomeLock)) {
+                                } else if (powerFaidsList[i].outcome === "both" && (!powerFaidsList[i].shortName || !powerFaidsList[i].requiredFor || !powerFaidsList[i].status || !powerFaidsList[i].documentLock || !powerFaidsList[i].verificationOutcome || !powerFaidsList[i].verificationOutcomeLock)) {
                                     service.pageValidations.powerFaidsSettingsValid = false;
                                 }
                             } else {
