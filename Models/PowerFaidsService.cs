@@ -124,7 +124,7 @@ namespace CampusLogicEvents.Web.Models
                         break;
                     case "verification":
                         fmDataElement.Add(new XElement(commonImport + "VerifOutcome", powerFaidsRecord.VerificationOutcome));
-                        fmDataElement.Add(new XElement(commonImport + "VerifOutcomeLock", powerFaidsRecord.VerificationOutcomeLock));
+                        fmDataElement.Add(new XElement(commonImport + "VerifOutcomeLock", powerFaidsRecord.VerificationOutcomeLock == "Y" ? "1" : "0"));
                         studentElement.Add(fmDataElement);
                         break;
                     case "both":
@@ -136,7 +136,7 @@ namespace CampusLogicEvents.Web.Models
                         documentsElement.Add(documentElement);
 
                         fmDataElement.Add(new XElement(commonImport + "VerifOutcome", powerFaidsRecord.VerificationOutcome));
-                        fmDataElement.Add(new XElement(commonImport + "VerifOutcomeLock", powerFaidsRecord.VerificationOutcomeLock));
+                        fmDataElement.Add(new XElement(commonImport + "VerifOutcomeLock", powerFaidsRecord.VerificationOutcomeLock == "Y" ? "1" : "0"));
 
                         studentElement.Add(documentsElement);
                         studentElement.Add(fmDataElement);
