@@ -122,6 +122,11 @@
                                         File Definitions<i ng-if="!validationService.pageValidations.fileDefinitionSettingsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
                                     </a>
                                 </li>
+                                <li ng-if="service.configurationModel.campusLogicSection.powerFaidsEnabled" ng-class="getActiveStep('/powerfaids')">
+                                    <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/powerfaids" ng-click="validateStep();">
+                                        PowerFAIDS<i ng-if="!validationService.pageValidations.powerFaidsSettingsValid" class="fa fa-exclamation-triangle icon-fixed-width padding-top-five important-color pull-right"></i>
+                                    </a>
+                                </li>
                                 <li ng-class="getActiveStep('/saveConfigurations')">
                                     <a class="pointer border-radius-10 text-center font-size-x-large" cl-link-to="/saveConfigurations" ng-click="validationService.validateAllSteps();">Save Configurations</a>
                                 </li>

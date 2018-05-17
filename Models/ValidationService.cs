@@ -83,6 +83,10 @@ namespace CampusLogicEvents.Web.Models
                     response.FileDefinitionSettingsValid = ValidateFileDefinitionSettings(configurationModel).IsSuccessStatusCode;
                     response.ImproperFileDefinitions = CheckIfImproperFileDefinitions(configurationModel);
                 }
+                if (configurationModel.CampusLogicSection.PowerFaidsEnabled ?? false)
+                {
+                    response.PowerFaidsSettingsValid = ValidatePowerFaidsSettings(configurationModel).IsSuccessStatusCode;
+                }
 
                 //if any of the features that has file paths involved are enabled validate file path uniqueness
                 if ((configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false)
@@ -360,7 +364,7 @@ namespace CampusLogicEvents.Web.Models
         /// <returns></returns>
         public static bool ValidateConnectionStringValid(IList<EventNotificationHandler> eventNotifications, string connectionString)
         {
-            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint", "ApiIntegration" };
+            string[] handlersWithoutConnectionString = { "DocumentRetrieval", "FileStore", "FileStoreAndDocumentRetrieval", "AwardLetterPrint", "BatchProcessingAwardLetterPrint", "ApiIntegration", "PowerFAIDS" };
 
             if (eventNotifications.All(x => handlersWithoutConnectionString.Contains(x.HandleMethod)))
             {
@@ -849,6 +853,106 @@ namespace CampusLogicEvents.Web.Models
                             }
                         }
                     }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        public static HttpResponseMessage ValidatePowerFaidsSettings(ConfigurationModel configurationModel)
+        {
+            try
+            {
+                if (configurationModel.CampusLogicSection.PowerFaidsEnabled == null)
+                {
+                    throw new Exception();
+                }
+
+                var settings = configurationModel.CampusLogicSection.PowerFaidsSettings;
+
+                if (settings != null)
+                {
+                    if (string.IsNullOrEmpty(settings.FilePath))
+                    {
+                        throw new Exception();
+                    }
+
+                    if (!settings.IsBatch.HasValue)
+                    {
+                        throw new Exception();
+                    }
+                    else
+                    {
+                        if (settings.IsBatch.Value == true && string.IsNullOrEmpty(settings.BatchExecutionMinutes))
+                        {
+                            throw new Exception();
+                        }
+                    }
+
+                    var powerFaidsList = configurationModel.CampusLogicSection.PowerFaidsList;
+
+                    if (powerFaidsList != null && powerFaidsList.Count > 0)
+                    {
+                        for (int i = 0; i < powerFaidsList.Count; i++)
+                        {
+                            var record = powerFaidsList[i];
+
+                            if (!string.IsNullOrEmpty(record.Event))
+                            {
+                                // Check for uniqueness of Event Notification ID
+                                for (int j = 0; j < powerFaidsList.Count; j++)
+                                {
+                                    if (j != i && powerFaidsList[j].Event == record.Event)
+                                    {
+                                        throw new Exception();
+                                    }
+                                }
+
+                                // Ensure the event is mapped
+                                if (!configurationModel.CampusLogicSection.EventNotificationsList.Any(e => e.EventNotificationId.ToString() == record.Event))
+                                {
+                                    throw new Exception();
+                                }
+
+                                if (!string.IsNullOrEmpty(record.Outcome))
+                                {
+                                    if (record.Outcome == "documents" && (string.IsNullOrEmpty(record.ShortName) || string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                    else if (record.Outcome == "verification" && (string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                    else if (record.Outcome == "both" && (string.IsNullOrEmpty(record.ShortName) || string.IsNullOrEmpty(record.RequiredFor) || string.IsNullOrEmpty(record.Status) || string.IsNullOrEmpty(record.DocumentLock) || string.IsNullOrEmpty(record.VerificationOutcome) || string.IsNullOrEmpty(record.VerificationOutcomeLock)))
+                                    {
+                                        throw new Exception();
+                                    }
+                                }
+                                else
+                                {
+                                    throw new Exception();
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                else
+                {
+                    throw new Exception();
                 }
             }
             catch (Exception e)

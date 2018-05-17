@@ -138,6 +138,11 @@ angular.module('clConnectApp')
                     controller: "fileDefinitionsController",
                     controllerAs: "vm"
                 })
+                .when("/powerfaids", {
+                    templateUrl: urlRoot + "/setup/powerfaids",
+                    controller: "powerFaidsController",
+                    controllerAs: "vm"
+                })
                 .otherwise({ redirectTo: "" });
 
             $provide.decorator("$location", ["$delegate", function ($delegate) {

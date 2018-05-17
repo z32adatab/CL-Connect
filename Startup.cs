@@ -56,6 +56,7 @@ namespace CampusLogicEvents.Web
             AutomatedDocumentImportWorker();
             AutomatedFileStoreJob();
             AutomatedBatchProcessingJob();
+            AutomatedPowerFaidsJob();
         }
 
         /// <summary>
@@ -604,6 +605,26 @@ namespace CampusLogicEvents.Web
         }
 
         /// <summary>
+        /// Adds background job for PowerFAIDS batching.
+        /// </summary>
+        private void AutomatedPowerFaidsJob()
+        {
+            VerifyPowerFaidsRecordTableExists();
+
+            bool? powerFaidsEnabled = campusLogicSection.PowerFaidsSettings.PowerFaidsEnabled;
+
+            if (powerFaidsEnabled == true && campusLogicSection.PowerFaidsSettings != null && campusLogicSection.PowerFaidsSettings.IsBatch == true && !string.IsNullOrEmpty(campusLogicSection.PowerFaidsSettings.BatchExecutionMinutes))
+            {
+                //Set reoccurance based on configs
+                RecurringJob.AddOrUpdate(() => PowerFaidsService.RunBatchPowerFaidsProcess(), "*/" + campusLogicSection.PowerFaidsSettings.BatchExecutionMinutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
+            }
+            else
+            {
+                RecurringJob.RemoveIfExists("PowerFaidsService.RunBatchPowerFaidsProcess");
+            }
+        }
+
+        /// <summary>
         /// Check if value is numerical
         /// </summary>
         /// <param name="str"></param>
@@ -734,6 +755,30 @@ namespace CampusLogicEvents.Web
                 catch (Exception ex)
                 {
                     logger.Error($"There was an issue with validating and/or creating the new columns for the BatchProcessRecord table in LocalDB: {ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the PowerFaidsRecord table exists in LocalDB and if it doesn't, creates it.
+        /// </summary>
+        private static void VerifyPowerFaidsRecordTableExists()
+        {
+            using (var dbContext = new CampusLogicContext())
+            {
+                try
+                {
+                    dbContext.Database.ExecuteSqlCommand(
+                        "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PowerFaidsRecord]'))" +
+                        "BEGIN CREATE TABLE[dbo].[PowerFaidsRecord]" +
+                        "([Id] INT IDENTITY NOT NULL PRIMARY KEY" +
+                        ",[Json] VARCHAR(MAX) NOT NULL" +
+                        ",[ProcessGuid] UNIQUEIDENTIFIER NULL)" +
+                        "CREATE INDEX ProcessGuid_Event ON [dbo].[PowerFaidsRecord] ([ProcessGuid]) END");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"There was an issue with validating and/or creating the PowerFaidsRecord table in LocalDB: {ex}");
                 }
             }
         }

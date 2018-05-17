@@ -104,7 +104,7 @@
         }
 
         function handleMethodChange(e) {
-            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval' || e.handleMethod === 'Print' || e.handleMethod === 'BatchProcessingAwardLetterPrint' || e.handleMethod === 'ApiIntegration' ) {
+            if (e.handleMethod === 'DocumentRetrieval' || e.handleMethod === 'FileStore' || e.handleMethod === 'FileStoreAndDocumentRetrieval' || e.handleMethod === 'Print' || e.handleMethod === 'BatchProcessingAwardLetterPrint' || e.handleMethod === 'ApiIntegration' || e.handleMethod === 'PowerFAIDS' ) {
                 e.dbCommandFieldValue = '';
             }
             if (e.handleMethod !== 'FileStore' && e.handleMethod !== 'FileStoreAndDocumentRetrieval') {
@@ -141,6 +141,7 @@
                                && eventNotification.handleMethod !== 'AwardLetterPrint'
                                && eventNotification.handleMethod !== 'BatchProcessingAwardLetterPrint'
                                && eventNotification.handleMethod !== 'ApiIntegration'
+                               && eventNotification.handleMethod !== 'PowerFAIDS'
                         );
                     }))
                     {

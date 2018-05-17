@@ -39,6 +39,7 @@
                 $scope.service.configurationModel.campusLogicSection.batchProcessingEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.apiIntegrationsEnabled = false;
                 $scope.service.configurationModel.campusLogicSection.fileDefinitionsEnabled = false;
+                $scope.service.configurationModel.campusLogicSection.powerFaidsEnabled = false;
             }
         }
 

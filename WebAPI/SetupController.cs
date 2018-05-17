@@ -218,7 +218,8 @@ namespace CampusLogicEvents.Web.WebAPI
                                                                             || (response.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
                                                                             || (response.CampusLogicSection.BatchProcessingTypes.BatchProcessingEnabled ?? false)
                                                                             || (response.CampusLogicSection.ApiIntegrations.ApiIntegrationsEnabled ?? false)
-                                                                            || (response.CampusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled ?? false);
+                                                                            || (response.CampusLogicSection.FileDefinitionSettings.FileDefinitionsEnabled ?? false)
+                                                                            || (response.CampusLogicSection.PowerFaidsSettings.PowerFaidsEnabled ?? false);
 
                 if (response.CampusLogicSection.StoredProcedures != null)
                 {
@@ -253,6 +254,16 @@ namespace CampusLogicEvents.Web.WebAPI
                 }
 
                 ConvertToFileDefinition(response);
+
+                if (response.CampusLogicSection.PowerFaidsSettings != null)
+                {
+                    response.CampusLogicSection.PowerFaidsEnabled = response.CampusLogicSection.PowerFaidsSettings.PowerFaidsEnabled;
+                    response.CampusLogicSection.PowerFaidsList = new List<PowerFaidsDto>();
+                    foreach (var powerFaidSetting in response.CampusLogicSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.GetPowerFaidsSettingList())
+                    {
+                        response.CampusLogicSection.PowerFaidsList.Add(new PowerFaidsDto(powerFaidSetting));
+                    }
+                }
 
                 if (response.CampusLogicSection.DocumentSettings.ImportSettings != null && response.CampusLogicSection.DocumentSettings.ImportSettings.Enabled)
                 {
@@ -431,7 +442,24 @@ namespace CampusLogicEvents.Web.WebAPI
                     campusLogicSection.ApiEndpoints.Add(endpointElement);
                 }
 
-				campusLogicSection.BulkActionSettings = configurationModel.CampusLogicSection.BulkActionSettings;
+                campusLogicSection.PowerFaidsSettings = configurationModel.CampusLogicSection.PowerFaidsSettings;
+                campusLogicSection.PowerFaidsSettings.PowerFaidsEnabled = configurationModel.CampusLogicSection.PowerFaidsEnabled;
+                foreach (var record in configurationModel.CampusLogicSection.PowerFaidsList)
+                {
+                    PowerFaidsSetting powerFaidsSetting = new PowerFaidsSetting();
+                    powerFaidsSetting.Event = record.Event;
+                    powerFaidsSetting.Outcome = record.Outcome;
+                    powerFaidsSetting.ShortName = record.ShortName;
+                    powerFaidsSetting.RequiredFor = record.RequiredFor;
+                    powerFaidsSetting.Status = record.Status;
+                    powerFaidsSetting.DocumentLock = record.DocumentLock;
+                    powerFaidsSetting.VerificationOutcome = record.VerificationOutcome;
+                    powerFaidsSetting.VerificationOutcomeLock = record.VerificationOutcomeLock;
+
+                    campusLogicSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.Add(powerFaidsSetting);
+                }
+
+                campusLogicSection.BulkActionSettings = configurationModel.CampusLogicSection.BulkActionSettings;
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;
@@ -528,7 +556,8 @@ namespace CampusLogicEvents.Web.WebAPI
                     FileMappingUploadValid = true,
                     BatchProcessingSettingsValid = true,
                     ApiIntegrationsValid = true,
-                    FileDefinitionSettingsValid = true
+                    FileDefinitionSettingsValid = true,
+                    PowerFaidsSettingsValid = true
                 };
                 return Request.CreateResponse(HttpStatusCode.OK, newConfigurationValidationModel);
             }
@@ -593,6 +622,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.ApiIntegrationsValid != null && (bool)!response.ApiIntegrationsValid)
                     || (response.StoredProcedureValid != null && (bool)!response.StoredProcedureValid)
                     || (response.FileDefinitionSettingsValid != null && (bool)!response.FileDefinitionSettingsValid)
+                    || (response.PowerFaidsSettingsValid != null && (bool)!response.PowerFaidsSettingsValid)
                     || !response.ApiCredentialsValid
                     || response.InvalidBatchName
                     || response.MissingBatchName

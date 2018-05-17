@@ -90,6 +90,10 @@
                         <input type="checkbox" id="fileDefinitions" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.fileDefinitionsEnabled, 'fileDefinitionSettingsValid');" ng-model="service.configurationModel.campusLogicSection.fileDefinitionsEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
                         <label class="k-checkbox-label" for="fileDefinitions" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables File Definitions">File Definitions</label>
                     </div>
+                    <div class="sub-check-box">
+                        <input type="checkbox" id="powerFaids" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.powerFaidsEnabled, 'powerFaidsSettingsValid');" ng-model="service.configurationModel.campusLogicSection.powerFaidsEnabled" ng-disabled="!service.configurationModel.campusLogicSection.eventNotificationsEnabled" />
+                        <label class="k-checkbox-label" for="powerFaids" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables PowerFAIDS">PowerFAIDS</label>
+                    </div>
                 </div>
             </div>
         </div>
