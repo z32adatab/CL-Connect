@@ -218,6 +218,7 @@ namespace CampusLogicEvents.Web
             {
                 UploadEnabled = campusLogicSection.AwardLetterUploadSettings.AwardLetterUploadEnabled ?? false,
                 UploadFilePath = campusLogicSection.AwardLetterUploadSettings.AwardLetterUploadFilePath,
+                CheckSubDirectories = campusLogicSection.AwardLetterUploadSettings.AwardLetterUploadCheckSubDirectories ?? false,
                 ArchiveFilePath = campusLogicSection.AwardLetterUploadSettings.AwardLetterArchiveFilePath,
                 UploadFrequencyType = campusLogicSection.AwardLetterUploadSettings.AwardLetterUploadFrequencyType,
                 DaysToRun = campusLogicSection.AwardLetterUploadSettings.AwardLetterUploadDaysToRun,
