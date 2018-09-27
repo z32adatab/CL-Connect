@@ -203,6 +203,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     }
                 }
 
+                //PMWebApiUrl is a newer setting that's needed for use with some newer datafile intergrations
+                if (!appSettings.ContainsKey("PmWebApiUrl"))
+                {
+                    appSettings.Add("PmWebApiUrl", "");
+                }
+                
                 if (response.CampusLogicSection.EventNotifications.Count > 0)
                 {
                     response.CampusLogicSection.EventNotificationsEnabled = true;
@@ -463,6 +469,7 @@ namespace CampusLogicEvents.Web.WebAPI
                 campusLogicSection.ISIRUploadSettings = configurationModel.CampusLogicSection.ISIRUploadSettings;
                 campusLogicSection.ISIRCorrectionsSettings = configurationModel.CampusLogicSection.ISIRCorrectionsSettings;
                 campusLogicSection.AwardLetterUploadSettings = configurationModel.CampusLogicSection.AwardLetterUploadSettings;
+                campusLogicSection.DataFileUploadSettings = configurationModel.CampusLogicSection.DataFileUploadSettings;
                 campusLogicSection.FileMappingUploadSettings = configurationModel.CampusLogicSection.FileMappingUploadSettings;
                 campusLogicSection.AwardLetterPrintSettings = configurationModel.CampusLogicSection.AwardLetterPrintSettings;
                 campusLogicSection.SMTPSettings = configurationModel.CampusLogicSection.SMTPSettings;
@@ -502,12 +509,14 @@ namespace CampusLogicEvents.Web.WebAPI
                     appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STSURL_SANDBOX;
                     appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_SANDBOX;
                     appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_APIURL_SANDBOX;
+                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_APIURL_SANDBOX;
                 }
                 else
                 {
                     appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STSURL_PRODUCTION;
                     appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_PRODUCTION;
                     appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_APIURL_PRODUCTION;
+                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_APIURL_PRODUCTION;
                 }
 
                 ClearOldFileDefinitions(campusLogicSection);
@@ -541,6 +550,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     SMTPValid = true,
                     ISIRUploadValid = true,
 					BulkActionSettingsValid = true,
+                    DataFileUploadValid = true,
 					AwardLetterUploadValid = true,
                     ISIRCorrectionsValid = true,
                     EventNotificationsValid = true,
@@ -612,6 +622,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     || (response.SMTPValid != null && (bool)!response.SMTPValid)
                     || (response.ISIRUploadValid != null && (bool)!response.ISIRUploadValid)
                     || (response.AwardLetterUploadValid != null && (bool)!response.AwardLetterUploadValid)
+                    || (response.DataFileUploadValid != null && (bool)!response.DataFileUploadValid)
                     || (response.ISIRCorrectionsValid != null && (bool)!response.ISIRCorrectionsValid)
                     || (response.EventNotificationsValid != null && (bool)!response.EventNotificationsValid)
                     || (response.ConnectionStringValid != null && (bool)!response.ConnectionStringValid)

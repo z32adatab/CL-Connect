@@ -37,6 +37,10 @@ namespace CampusLogicEvents.Web.Models
                 {
                     response.AwardLetterUploadValid = ValidateAwardLetterUploadSettings(configurationModel.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadFilePath).IsSuccessStatusCode;
                 }
+                if (configurationModel.CampusLogicSection.DataFileUploadSettings.DataFileUploadEnabled ?? false)
+                {
+                    response.DataFileUploadValid = ValidateDataFileUploadSettings(configurationModel.CampusLogicSection.DataFileUploadSettings).IsSuccessStatusCode;
+                }
                 if (configurationModel.CampusLogicSection.SMTPSettings.NotificationsEnabled ?? false)
                 {
                     response.SMTPValid = ValidateSMTPSettings(configurationModel.CampusLogicSection.SMTPSettings, configurationModel.SmtpSection).IsSuccessStatusCode;
@@ -95,7 +99,8 @@ namespace CampusLogicEvents.Web.Models
                     || (configurationModel.CampusLogicSection.DocumentSettings.DocumentsEnabled ?? false)
                     || (configurationModel.CampusLogicSection.FileStoreSettings.FileStoreEnabled ?? false)
                     || (configurationModel.CampusLogicSection.AwardLetterPrintSettings.AwardLetterPrintEnabled ?? false)
-                    || (configurationModel.CampusLogicSection.BatchProcessingEnabled ?? false))
+                    || (configurationModel.CampusLogicSection.BatchProcessingEnabled ?? false)
+                    || (configurationModel.CampusLogicSection.DataFileUploadSettings.DataFileUploadEnabled ?? false))
                 {
                     response.DuplicatePath = !ValidatePathsUnique(configurationModel);
                 }
@@ -193,6 +198,11 @@ namespace CampusLogicEvents.Web.Models
             {
                 pathsToValidate.Add(configuration.CampusLogicSection.AwardLetterUploadSettings.AwardLetterUploadFilePath);
                 pathsToValidate.Add(configuration.CampusLogicSection.AwardLetterUploadSettings.AwardLetterArchiveFilePath);
+            }
+            if (configuration.CampusLogicSection.DataFileUploadSettings.DataFileUploadEnabled ?? false)
+            {
+                pathsToValidate.Add(configuration.CampusLogicSection.DataFileUploadSettings.DataFileUploadFilePath);
+                pathsToValidate.Add(configuration.CampusLogicSection.DataFileUploadSettings.DataFileArchiveFilePath);
             }
             if (configuration.CampusLogicSection.ISIRUploadSettings.ISIRUploadEnabled ?? false)
             {
@@ -524,6 +534,28 @@ namespace CampusLogicEvents.Web.Models
                 {
                     return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
                 }
+            }
+            catch (Exception ex)
+            {
+                logger.ErrorFormat("TestWritePermissions Get Error: {0}", ex);
+                return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+            }
+        }
+
+        public static HttpResponseMessage ValidateDataFileUploadSettings(DataFileUploadSettings settings)
+        {
+            try
+            {
+                DocumentManager documentManager = new DocumentManager();
+                if (!documentManager.ValidateDirectory(settings.DataFileUploadFilePath))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+                }
+                if (!documentManager.ValidateDirectory(settings.DataFileArchiveFilePath))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
+                }
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {

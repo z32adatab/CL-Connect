@@ -34,6 +34,7 @@
             testFileStoreSettings: testFileStoreSettings,
             testAwardLetterPrintSettings: testAwardLetterPrintSettings,
             testAwardLetterUploadPath: testAwardLetterUpload,
+            testDataFileUploadPath: testDataFileUpload,
             testFileMappingUploadPath: testFileMappingUpload,
             testDocumentSettings: testDocumentSettings,
             testDocumentImports: testDocumentImports,
@@ -254,6 +255,11 @@
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadFilePath);
             }
 
+            if (setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadEnabled) {
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileArchiveFilePath);
+                filePathValues.push(setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadFilePath);
+            }
+
             if (setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsEnabled) {
                 filePathValues.push(setupservice.configurationModel.campusLogicSection.isirCorrectionsSettings.correctionsFilePath);
 
@@ -374,6 +380,9 @@
                 case '/awardLetterUpload':
                     service.testAwardLetterUploadPath();
                     break;
+                case '/dataFileUpload':
+                    service.testDataFileUploadPath();
+                    break;
                 case '/isircorrections':
                     service.testIsirCorrections();
                     break;
@@ -421,6 +430,9 @@
             }
             if (setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled) {
                 service.testAwardLetterUploadPath();
+            }
+            if (setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadEnabled) {
+                service.testDataFileUploadPath();
             }
             if (setupservice.configurationModel.campusLogicSection.smtpSettings.notificationsEnabled) {
                 service.testSMTPSettings();
@@ -533,6 +545,32 @@
             }
             else {
                 service.pageValidations.awardLetterUploadValid = false;
+            }
+        }
+
+        function testDataFileUpload() {
+            if (setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadDaysToRun.length > 0
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadFilePath)
+                && service.testFolderPath(setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileArchiveFilePath)) {
+
+                service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadFilePath }
+                    , function (response) {
+                        service.pageValidations.dataFileUploadValid = true;
+                    }, function (error) {
+                        service.pageValidations.dataFileUploadValid = false;
+                    });
+
+                if (service.pageValidations.dataFileUploadValid) {
+                    service.testReadWritePermissions.get({ directoryPath: setupservice.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileArchiveFilePath }
+                        , function (response) {
+                            service.pageValidations.dataFileUploadValid = true;
+                        }, function (error) {
+                            service.pageValidations.dataFileUploadValid = false;
+                        });
+                }
+            }
+            else {
+                service.pageValidations.dataFileUploadValid = false;
             }
         }
 

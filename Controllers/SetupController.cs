@@ -115,6 +115,16 @@ namespace CampusLogicEvents.Web.Controllers
             return PartialView();
         }
 
+        public ActionResult DataFileUpload()
+        {
+            if (!Request.IsLocal)
+            {
+                throw new SecurityException("This is only available locally.");
+            }
+
+            return PartialView();
+        }
+
         public ActionResult DocumentImports()
         {
             if (!Request.IsLocal)

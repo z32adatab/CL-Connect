@@ -1,20 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using CampusLogicEvents.Implementation;
+using CampusLogicEvents.Implementation.Configurations;
+using CampusLogicEvents.Implementation.Models;
 using CampusLogicEvents.Web.Models;
 using Hangfire;
+using Hangfire.Storage;
+using log4net;
 using Microsoft.Owin;
 using Owin;
+using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Configuration;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
-using CampusLogicEvents.Implementation;
-using CampusLogicEvents.Implementation.Configurations;
-using CampusLogicEvents.Implementation.Models;
-using log4net;
-using Hangfire.Storage;
+using System.Web.Configuration;
+using System.Web.Hosting;
 
 [assembly: OwinStartup(typeof(CampusLogicEvents.Web.Startup))]
 
@@ -31,6 +34,9 @@ namespace CampusLogicEvents.Web
 
         public void Configuration(IAppBuilder app)
         {
+            // Automatic update
+            PerformUpdate();
+
             var workerCount = ConfigurationManager.AppSettings["BackgroundWorkerCount"];
             var workerRetryAttempts = ConfigurationManager.AppSettings["BackgroundWorkerRetryAttempts"];
 
@@ -52,11 +58,70 @@ namespace CampusLogicEvents.Web
             AutomatedBulkActionJob();
             AutomatedAwardLetterUpload();
             AutomatedFileMappingUpload();
+            AutomatedDataFileUpload();
             AutomatedISIRCorrectionBatching();
             AutomatedDocumentImportWorker();
             AutomatedFileStoreJob();
             AutomatedBatchProcessingJob();
             AutomatedPowerFaidsJob();
+        }
+
+        /// <summary>
+        /// Performs any updates that should happen automatically.  Make sure changes are only
+        /// performed if required.
+        /// </summary>
+        private void PerformUpdate()
+        {
+            // Don't let problems stop us from running
+            try
+            {
+                // Check if disabled
+                var isDisabled = false;
+                var value = ConfigurationManager.AppSettings["DisableAutoUpdate"] ?? "false";
+                bool.TryParse(value, out isDisabled);
+                if(isDisabled)
+                {
+                    // Skip it
+                    return;
+                }
+
+                // Check the environment and the STS
+                var environment = ConfigurationManager.AppSettings["Environment"] ?? "initial";
+                if (string.IsNullOrEmpty(environment) || string.Equals("initial", environment, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // Not setup anyway
+                    return;
+                }
+                var hasChanges = false;
+                var config = WebConfigurationManager.OpenWebConfiguration(HostingEnvironment.ApplicationVirtualPath);
+
+                // Get the current STS and the expected STS
+                var currentSts = ConfigurationManager.AppSettings["StsUrl"];
+                var expectedSts = string.Equals("sandbox", environment, StringComparison.InvariantCultureIgnoreCase)
+                    ? ApiUrlConstants.STSURL_SANDBOX : ApiUrlConstants.STSURL_PRODUCTION;
+                if (!string.Equals(expectedSts, currentSts, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // STS update needed
+                    config.AppSettings.Settings["StsUrl"].Value = expectedSts;
+                    hasChanges = true;
+                }
+
+                // Save if needed
+                if(hasChanges)
+                {
+                    // Yay, fun - archive and update
+                    var sourcePath = HostingEnvironment.MapPath("~/Web.config");
+                    var targetPath = HostingEnvironment.MapPath("~/WebArchive/");
+                    var fileName = $"webConfigCopy{DateTime.UtcNow.ToFileTimeUtc()}.config";
+                    targetPath = Path.Combine(targetPath, fileName);
+                    File.Copy(sourcePath, targetPath);
+                    config.Save();
+                }
+            }
+            catch (Exception exc)
+            {
+                logger.Error($"Unhandled exception performing automatic update, please update manually: {exc}.");
+            }
         }
 
         /// <summary>
@@ -252,6 +317,31 @@ namespace CampusLogicEvents.Web
             });
         }
 
+        /// <summary>
+        /// Checking the configurations and setting them
+        /// for the automated Data File upload process
+        /// </summary>
+        private void AutomatedDataFileUpload()
+        {
+            //validation
+            if (campusLogicSection.DataFileUploadSettings == null)
+            {
+                NotificationService.ErrorNotification("Automated Data File Mapping Upload", "The data file settings are missing");
+                logger.Error("Data File Upload settings are missing");
+                return;
+            }
+
+            UploadConfigurationValidation(new UploadSettings
+            {
+                UploadEnabled = campusLogicSection.DataFileUploadSettings.DataFileUploadEnabled ?? false,
+                UploadFilePath = campusLogicSection.DataFileUploadSettings.DataFileUploadFilePath,
+                ArchiveFilePath = campusLogicSection.DataFileUploadSettings.DataFileArchiveFilePath,
+                UploadFrequencyType = campusLogicSection.DataFileUploadSettings.DataFileUploadFrequencyType,
+                DaysToRun = campusLogicSection.DataFileUploadSettings.DataFileUploadDaysToRun,
+                UploadType = UploadSettings.DataFile,
+                CheckSubDirectories = true
+            });
+        }
 
         /// <summary>
         /// Checks for configurations and settings 
@@ -397,7 +487,8 @@ namespace CampusLogicEvents.Web
         {
             if (uploadSettings.UploadEnabled)
             {
-                if (uploadSettings.UploadType != UploadSettings.AwardLetter && uploadSettings.UploadType != UploadSettings.ISIR && uploadSettings.UploadType != UploadSettings.FileMapping)
+                if (uploadSettings.UploadType != UploadSettings.AwardLetter && uploadSettings.UploadType != UploadSettings.ISIR 
+                    && uploadSettings.UploadType != UploadSettings.FileMapping && uploadSettings.UploadType != UploadSettings.DataFile)
                 {
                     NotificationService.ErrorNotification($"Automated {uploadSettings.UploadType} Upload", $"The upload type of {uploadSettings.UploadType} is not a valid upload type");
                     logger.Error($"{uploadSettings.UploadType} is not a valid upload type");

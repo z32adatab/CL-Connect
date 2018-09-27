@@ -89,6 +89,11 @@ angular.module('clConnectApp')
                     controller: "filemappinguploadcontroller",
                     controllerAs: "vm"
                 })
+                .when("/dataFileUpload", {
+                    templateUrl: urlRoot + "/setup/datafileupload",
+                    controller: "datafileuploadcontroller",
+                    controllerAs: "vm"
+                })
                 .when("/documentImports", {
                     templateUrl: urlRoot + "/setup/documentimports",
                     controller: "documentimportscontroller",

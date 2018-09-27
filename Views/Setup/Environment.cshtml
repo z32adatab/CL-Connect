@@ -52,6 +52,10 @@
                     <label class="k-checkbox-label" for="fileMappingUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Award Letter file mapping upload">AwardLetter File Mapping Uploads</label>
                 </div>
                 <div class="padding-five">
+                    <input type="checkbox" id="dataFileUpload" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadEnabled, 'dataFileUploadValid');" ng-model="service.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadEnabled">
+                    <label class="k-checkbox-label" for="dataFileUpload" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Automates Data File (SIS, scholarship, etc) uploads">DataFile Uploads</label>
+                </div>
+                <div class="padding-five">
                     <input type="checkbox" id="documentImports" class="k-checkbox" ng-click="addRemovePageFromValidation(service.configurationModel.campusLogicSection.documentImportSettings.enabled, 'documentImportsValid');" ng-model="service.configurationModel.campusLogicSection.documentImportSettings.enabled">
                     <label class="k-checkbox-label" for="documentImports" data-toggle="tooltip" data-trigger="mouseenter" data-placement="right" title="Enables ability to import student documents into StudentVerification">Document Imports</label>
                 </div>
