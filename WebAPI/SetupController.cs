@@ -203,6 +203,12 @@ namespace CampusLogicEvents.Web.WebAPI
                     }
                 }
 
+                //PMWebApiUrl is a newer setting that's needed for use with some newer datafile intergrations
+                if (!appSettings.ContainsKey("PmWebApiUrl"))
+                {
+                    appSettings.Add("PmWebApiUrl", "");
+                }
+                
                 if (response.CampusLogicSection.EventNotifications.Count > 0)
                 {
                     response.CampusLogicSection.EventNotificationsEnabled = true;
