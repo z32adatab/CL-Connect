@@ -303,26 +303,47 @@ namespace CampusLogicEvents.Web.Models
                         VerificationOutcomeLock = eventSetting.VerificationOutcomeLock
                     };
 
-                    if (generalSettings.IsBatch.Value == false)
+                    bool ignoreEvent = true;
+
+                    // SV-2855 Only process PowerFAIDS records if tran category is Verification
+                    if (eventData.SvTransactionCategoryId.HasValue)
                     {
-                        try
+                        if ((TransactionCategory)eventData.SvTransactionCategoryId == TransactionCategory.Verification)
                         {
-                            PowerFaidsService.ProcessPowerFaidsRecords(new List<PowerFaidsDto>() { recordToProcess });
+                            ignoreEvent = false;
+
+                            if (generalSettings.IsBatch.Value == false)
+                            {
+                                try
+                                {
+                                    PowerFaidsService.ProcessPowerFaidsRecords(new List<PowerFaidsDto>() { recordToProcess });
+                                }
+                                catch (Exception)
+                                {
+                                    throw new Exception($"Error occurred while processing PowerFAIDS record. EventId: {recordToProcess.EventId}");
+                                }
+                            }
+                            else
+                            {
+                                var json = JsonConvert.SerializeObject(recordToProcess).Replace("'", "''");
+
+                                using (var dbContext = new CampusLogicContext())
+                                {
+                                    // Insert the record into the PowerFaidsRecord table so that it can be processed by the Automated PowerFAIDS job.
+                                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[PowerFaidsRecord]([Json], [ProcessGuid]) VALUES('{json}', NULL)");
+                                }
+                            }
                         }
-                        catch (Exception)
+                        else
                         {
-                            throw new Exception($"Error occurred while processing PowerFAIDS record. EventId: {recordToProcess.EventId}");
+                            // TODO - figure out what to do in event of PJ, SAP, etc.
                         }
                     }
-                    else
-                    {
-                        var json = JsonConvert.SerializeObject(recordToProcess).Replace("'", "''");
 
-                        using (var dbContext = new CampusLogicContext())
-                        {
-                            // Insert the record into the PowerFaidsRecord table so that it can be processed by the Automated PowerFAIDS job.
-                            dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[PowerFaidsRecord]([Json], [ProcessGuid]) VALUES('{json}', NULL)");
-                        }
+                    // remove this log when the other transactions are implemented
+                    if (ignoreEvent)
+                    {
+                        logger.Info($"PowerFAIDS ignoring Event {eventData.Id} because Transaction Category is not Verification");
                     }
                 }
                 else
