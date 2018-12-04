@@ -1000,10 +1000,10 @@
 
                 if (powerFaidsList && powerFaidsList.length > 0) {
                     for (var i = 0; i < powerFaidsList.length; i++) {
-                        if (powerFaidsList[i].event) {
-                            // Check for uniqueness of events
+                        if (powerFaidsList[i].event && powerFaidsList[i].transactionCategory) {
+                            // Check for uniqueness of event/transaction category combinations
                             for (var j = 0; j < powerFaidsList.length; j++) {
-                                if (j !== i && powerFaidsList[j].event === powerFaidsList[i].event) {
+                                if (j !== i && powerFaidsList[j].event === powerFaidsList[i].event && powerFaidsList[j].transactionCategory === powerFaidsList[i].transactionCategory) {
                                     service.pageValidations.powerFaidsSettingsValid = false;
                                 }
                             }

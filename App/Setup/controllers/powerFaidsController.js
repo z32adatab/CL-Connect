@@ -18,6 +18,7 @@
         vm.gridOptions = {
             columns:
                 [{ 'field': 'event', title: 'Event' },
+                { 'field': 'transactionCategory', title: 'Transaction Category' },
                 {
                     'field': 'outcome', title: 'Outcome', template: function (dataItem) {
                         switch (dataItem.outcome) {
@@ -77,65 +78,65 @@
                         }
                     }
                 },
-                    {
-                        'field': 'documentLock', title: 'Document Lock', template: function (dataItem) {
-                            switch (dataItem.documentLock) {
-                                case "Y":
-                                    return "Locked";
-                                case "N":
-                                    return "Unlocked";
-                                default:
-                                    return "N/A";
-                            }
+                {
+                    'field': 'documentLock', title: 'Document Lock', template: function (dataItem) {
+                        switch (dataItem.documentLock) {
+                            case "Y":
+                                return "Locked";
+                            case "N":
+                                return "Unlocked";
+                            default:
+                                return "N/A";
                         }
-                    },
-                    {
-                        'field': 'verificationOutcome', title: 'Verification Outcome', template: function (dataItem) {
-                            switch (dataItem.verificationOutcome) {
-                                case "N":
-                                    return "Not Performed";
-                                case "S":
-                                    return "Selected; Not Verified";
-                                case "V":
-                                    return "Verified";
-                                case "W":
-                                    return "Without Documentation";
-                                default:
-                                    return "N/A";
-                            }
+                    }
+                },
+                {
+                    'field': 'verificationOutcome', title: 'Verification Outcome', template: function (dataItem) {
+                        switch (dataItem.verificationOutcome) {
+                            case "N":
+                                return "Not Performed";
+                            case "S":
+                                return "Selected; Not Verified";
+                            case "V":
+                                return "Verified";
+                            case "W":
+                                return "Without Documentation";
+                            default:
+                                return "N/A";
                         }
-                    },
-                    {
-                        'field': 'verificationOutcomeLock', title: 'Verification Outcome Lock', template: function (dataItem) {
-                            switch (dataItem.verificationOutcomeLock) {
-                                case "Y":
-                                    return "Locked";
-                                case "N":
-                                    return "Unlocked";
-                                default:
-                                    return "N/A";
-                            }
+                    }
+                },
+                {
+                    'field': 'verificationOutcomeLock', title: 'Verification Outcome Lock', template: function (dataItem) {
+                        switch (dataItem.verificationOutcomeLock) {
+                            case "Y":
+                                return "Locked";
+                            case "N":
+                                return "Unlocked";
+                            default:
+                                return "N/A";
                         }
-                    },
-                 {
-                     command: [
-                     {
-                         template: kendo.template($("#powerfaids-collection-template").html())
-                     }
-                     ],
-                     width: "120px"
-                 }]
+                    }
+                },
+                {
+                    command: [
+                        {
+                            template: kendo.template($("#powerfaids-collection-template").html())
+                        }
+                    ],
+                    width: "120px"
+                }]
         }
 
-        vm.addPowerFaidsRecord = function() {
+        vm.addPowerFaidsRecord = function () {
             vm.addpowerfaidsmodalcontroller.open(null, vm.powerFaidsList).result.then(function () {
                 vm.refreshGrid();
             });
         }
 
-        vm.getIndex = function (event) {
+        vm.getIndex = function (event, transactionCategory) {
             for (var i = 0; i < vm.powerFaidsList.length; i++) {
-                if (vm.powerFaidsList[i].event === event) {
+                if (vm.powerFaidsList[i].event === event && vm.powerFaidsList[i].transactionCategory === transactionCategory) {
                     return i;
                 }
             }
@@ -144,18 +145,18 @@
         }
 
         vm.editPowerFaidsRecord = function (dataItem) {
-            dataItem.index = vm.getIndex(dataItem.event);
+            dataItem.index = vm.getIndex(dataItem.event, dataItem.transactionCategory);
             vm.addpowerfaidsmodalcontroller.open(dataItem, vm.powerFaidsList).result.then(function () {
                 vm.refreshGrid();
             });
         }
 
         vm.deletePowerFaidsRecord = function (dataItem) {
-            vm.powerFaidsList.splice(vm.getIndex(dataItem.event), 1);
+            vm.powerFaidsList.splice(vm.getIndex(dataItem.event, dataItem.transactionCategory), 1);
             vm.refreshGrid();
         }
 
-        vm.refreshGrid = function() {
+        vm.refreshGrid = function () {
             $('#powerfaids-grid').data('kendoGrid').dataSource.read();
         }
     }

@@ -18,6 +18,7 @@ clConnectServices.factory("addpowerfaidsmodalcontroller", ["$modal",
                     if (modalParams.theItem === undefined || modalParams.theItem === null) {
                         $scope.modelCopy = {
                             event: null,
+                            transactionCategory: null,
                             outcome: null,
                             requiredFor: null,
                             status: null,
@@ -42,7 +43,6 @@ clConnectServices.factory("addpowerfaidsmodalcontroller", ["$modal",
                         if ($scope.modalType === "Add") {
                             $scope.theList.push($scope.theItem);
                         } else {
-                            console.log($scope.theItem.index);
                             $scope.theList[$scope.theItem.index] = $scope.theItem;
                         }
                         $scope.closeModal();
