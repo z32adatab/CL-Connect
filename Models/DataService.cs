@@ -413,7 +413,7 @@ namespace CampusLogicEvents.Web.Models
                     ParameterName = parameterElement.Name,
                     OdbcType = odbcType,
                     Size = parameterElement.LengthAsInt,
-                    Value = value ?? DBNull.Value
+                    Value = value == null ? DBNull.Value : (string)value == string.Empty && odbcType == OdbcType.Int ? 0 : value
                 };
 
                 return parameter;
