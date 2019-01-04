@@ -461,6 +461,7 @@ namespace CampusLogicEvents.Web.WebAPI
                     powerFaidsSetting.DocumentLock = record.DocumentLock;
                     powerFaidsSetting.VerificationOutcome = record.VerificationOutcome;
                     powerFaidsSetting.VerificationOutcomeLock = record.VerificationOutcomeLock;
+                    powerFaidsSetting.TransactionCategory = record.TransactionCategory;
 
                     campusLogicSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.Add(powerFaidsSetting);
                 }

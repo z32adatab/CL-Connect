@@ -283,7 +283,11 @@ namespace CampusLogicEvents.Web.Models
 
                 var eventSettings = campusLogicConfigSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.GetPowerFaidsSettingList();
 
-                var eventSetting = eventSettings.Where(e => e.Event == eventData.EventNotificationId.ToString()).FirstOrDefault();
+                var eventSetting = eventSettings
+                    .Where(e => eventData.SvTransactionCategoryId.HasValue && 
+                        eventData.SvTransactionCategoryId.Value.ToString() == e.TransactionCategory && 
+                        e.Event == eventData.EventNotificationId.ToString())
+                    .FirstOrDefault();
 
                 if (eventSetting != null)
                 {
@@ -327,7 +331,7 @@ namespace CampusLogicEvents.Web.Models
                 }
                 else
                 {
-                    throw new Exception($"Error occured while processing PowerFAIDS record. Cannot find mapping for Event Notification: {eventData.EventNotificationId}");
+                    throw new Exception($"Error occured while processing PowerFAIDS record. Cannot find mapping for Event Notification: {eventData.EventNotificationId} and Transaction Category: {eventData.SvTransactionCategoryId}");
                 }
             }
             catch (Exception e)
@@ -409,7 +413,7 @@ namespace CampusLogicEvents.Web.Models
                     ParameterName = parameterElement.Name,
                     OdbcType = odbcType,
                     Size = parameterElement.LengthAsInt,
-                    Value = value ?? DBNull.Value
+                    Value = value == null ? DBNull.Value : (string)value == string.Empty && odbcType == OdbcType.Int ? 0 : value
                 };
 
                 return parameter;

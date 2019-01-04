@@ -1,8 +1,8 @@
 ﻿<div class="modal-header"><h4>{{modalType}} PowerFAIDS Record</h4></div>
 <form name="powerFaidsModalForm" ng-submit="powerFaidsModalForm.$valid && save()" novalidate>
     <div class="modal-body">
-        <!-- Event -->
         <div class="row">
+            <!-- Event -->
             <div class="col-md-4">
                 <label class="control-label">Event</label>
                 <input name="event"
@@ -11,6 +11,16 @@
                        ng-model="modelCopy.event"
                        required />
                 <span class="field-validation-error" ng-show="(submitted || powerFaidsModalForm.event.$dirty) && powerFaidsModalForm.event.$error.required">Required</span>
+            </div>
+            <!-- Transaction Category -->
+            <div class="col-md-6">
+                <label class="control-label">Transaction Category</label>
+                <input name="transactionCategory"
+                       id="transactionCategory"
+                       class="form-control"
+                       ng-model="modelCopy.transactionCategory"
+                       required />
+                <span class="field-validation-error" ng-show="(submitted || powerFaidsModalForm.transactionCategory.$dirty) && powerFaidsModalForm.transactionCategory.$error.required">Required</span>
             </div>
         </div>
         <!-- Outcome -->

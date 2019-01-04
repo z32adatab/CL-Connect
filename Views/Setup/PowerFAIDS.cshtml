@@ -57,7 +57,7 @@
                      k-options="vm.gridOptions">
                 </div>
                 <span class="field-validation-error" ng-show="!vm.pageValid && (!vm.powerFaidsList || vm.powerFaidsList.length == 0)">At least one record is requried.</span>
-                <span class="field-validation-error" ng-show="!vm.pageValid && vm.powerFaidsList.length > 0">Please ensure all events are unique and defined in Event Notifications.</span>
+                <span class="field-validation-error" ng-show="!vm.pageValid && vm.powerFaidsList.length > 0">Please ensure all Event/Transaction Category pairings are defined and unique and Events are accounted for in Event Notifications.</span>
             </div>
             <div class="col-md-12" style="margin-top:8px;">
                 <button class="btn btn-default" ng-click="vm.addPowerFaidsRecord()">Add</button>
