@@ -43,7 +43,7 @@ namespace CampusLogicEvents.Web.Models
                             if (type == ConfigConstants.AwardLetterPrintBatchType)
                             {
                                 var manager = new DocumentManager();
-                                Dictionary<int,Guid> recordIds = new Dictionary<int, Guid>();
+                                Dictionary<int, Guid> recordIds = new Dictionary<int, Guid>();
 
                                 var recordList = dbContext.BatchProcessRecords.Where(b => b.ProcessGuid == processGuid).Select(b => b).ToList();
                                 // Get all records with this process guid
@@ -52,7 +52,7 @@ namespace CampusLogicEvents.Web.Models
                                     // Deseralize the message
                                     EventNotificationData eventData =
                                         JsonConvert.DeserializeObject<EventNotificationData>(record.Message);
-                                    
+
                                     //Track retry attempts
                                     var now = DateTime.Now;
                                     var processSingularly = false;
@@ -138,6 +138,9 @@ namespace CampusLogicEvents.Web.Models
                 {
                     //Something happened during processing. Update any records that may have been marked for processing back to null so that they can be re-processed.
                     logger.Error($"An error occured while attempting to execute the batch process: {e}");
+                }
+                finally
+                {
                     dbContext.Database.ExecuteSqlCommand($"UPDATE [dbo].[BatchProcessRecord] SET [ProcessGuid] = NULL WHERE [ProcessGuid] = '{processGuid}'");
                 }
             }
