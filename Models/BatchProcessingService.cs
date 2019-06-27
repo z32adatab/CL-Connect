@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
+using CampusLogicEvents.Implementation.Extensions;
+using Newtonsoft.Json.Linq;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -18,7 +20,7 @@ namespace CampusLogicEvents.Web.Models
         private static readonly int RETRY_MAX = 3;
         private static readonly NotificationManager notificationManager = new NotificationManager();
         private static readonly CampusLogicSection campusLogicConfigSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
-        
+
         [AutomaticRetry(Attempts = 0)]
         public static async void RunBatchProcess(string type, string name, int size)
         {
@@ -49,14 +51,13 @@ namespace CampusLogicEvents.Web.Models
                                 // Get all records with this process guid
                                 foreach (var record in recordList)
                                 {
-                                    // Deseralize the message
-                                    EventNotificationData eventData =
-                                        JsonConvert.DeserializeObject<EventNotificationData>(record.Message);
+                                    // Deserialize the message
+                                    var eventData = new EventNotificationData(JObject.Parse(record.Message));
 
                                     //Track retry attempts
                                     var now = DateTime.Now;
                                     var processSingularly = false;
-                                    var retryTimeHasPassed = record.RetryUpdatedDate.HasValue ? record.RetryUpdatedDate.Value.AddHours(1) < DateTime.Now : true;
+                                    var retryTimeHasPassed = !record.RetryUpdatedDate.HasValue || record.RetryUpdatedDate.Value.AddHours(1) < DateTime.Now;
                                     if (record.RetryCount == null)
                                     {
                                         record.RetryCount = 1;
@@ -68,34 +69,34 @@ namespace CampusLogicEvents.Web.Models
                                         dbContext.Database.ExecuteSqlCommand($"UPDATE[dbo].[BatchProcessRecord] SET [RetryCount] = [RetryCount] + 1, [RetryUpdatedDate] = '{now}'  FROM [dbo].[BatchProcessRecord] WHERE[Id] = {record.Id}");
                                     }
 
-                                    if (!eventData.AlRecordId.HasValue)
+                                    if (eventData.PropertyValues[EventPropertyConstants.AlRecordId].IsNullOrEmpty())
                                     {
-                                        SendErrorNotification("Batch AwardLetter process", $"This record has no AL-record-Id, record Id: {eventData.Id}. This likely means the notification event is not an AL event.  Please contact your CampusLogic contact for next steps.");
-                                        logger.Error($"Record for batch awardletter process has no AL-record-Id, with award letter record Id: {eventData.Id}.  This likely means the notification event is not an AL event");
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has no AL-record-Id, record Id: {eventData.PropertyValues[EventPropertyConstants.Id].Value<string>()}. This likely means the notification event is not an AL event.  Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has no AL-record-Id, with award letter record Id: {eventData.PropertyValues[EventPropertyConstants.Id].Value<string>()}.  This likely means the notification event is not an AL event");
                                         dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
                                     }
                                     else if (record.RetryCount > RETRY_MAX)
                                     {
-                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id: {record.Id}, AL-record-Id: {eventData.AlRecordId}. Please contact your CampusLogic contact for next steps.");
-                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {record.Id}, AL-record-Id: {eventData.AlRecordId}.");
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id: {record.Id}, AL-record-Id: {eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>()}. Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {record.Id}, AL-record-Id: {eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>()}.");
                                         dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
                                     }
                                     else if (record.RetryCount == RETRY_MAX && retryTimeHasPassed)
                                     {
                                         processSingularly = true;
-                                        recordIds.Add(record.Id, eventData.AlRecordId.Value);
+                                        recordIds.Add(record.Id, eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>());
                                     }
                                     else if (retryTimeHasPassed)
                                     {
                                         processSingularly = false;
-                                        recordIds.Add(record.Id, eventData.AlRecordId.Value);
+                                        recordIds.Add(record.Id, eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>());
                                     }
 
                                     if (recordIds.Count == size || processSingularly)
                                     {
                                         // Get event data for index file creation
                                         var recordIdList = string.Join(",", recordIds.Keys);
-                                        var message = JsonConvert.DeserializeObject<EventNotificationData>(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First());
+                                        var message = new EventNotificationData(JObject.Parse(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First()));
 
                                         var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name, message);
                                         //If the response was successful remove those records from the db so
@@ -112,7 +113,7 @@ namespace CampusLogicEvents.Web.Models
                                 if (recordIds.Any())
                                 {
                                     var recordIdList = string.Join(",", recordIds.Keys);
-                                    var message = JsonConvert.DeserializeObject<EventNotificationData>(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First());
+                                    var message = new EventNotificationData(JObject.Parse(dbContext.Database.SqlQuery<string>($"SELECT [Message] from [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] IN ({recordIdList})").First()));
 
                                     var response = await manager.GetBatchAwardLetterPdfFile(recordIds.Values.ToList(), name, message);
                                     if (response.IsSuccessStatusCode)

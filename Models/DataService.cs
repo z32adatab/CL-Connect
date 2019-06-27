@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.IO;
 using System.Xml.Linq;
+using CampusLogicEvents.Implementation.Extensions;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -81,7 +82,7 @@ namespace CampusLogicEvents.Web.Models
                 ParameterName = "StudentId",
                 OdbcType = OdbcType.VarChar,
                 Size = 9,
-                Value = eventData.StudentId
+                Value = eventData.PropertyValues[EventPropertyConstants.StudentId].Value<string>()
             });
 
             parameters.Add(new OdbcParameter
@@ -89,27 +90,27 @@ namespace CampusLogicEvents.Web.Models
                 ParameterName = "AwardYear",
                 OdbcType = OdbcType.VarChar,
                 Size = 4,
-                Value = String.IsNullOrWhiteSpace(eventData.AwardYear) ? string.Empty : (eventData.AwardYear.Substring(2, 2) + eventData.AwardYear.Substring(7, 2))
+                Value = eventData.PropertyValues[EventPropertyConstants.AwardYear].IsNullOrEmpty() ? string.Empty : (eventData.PropertyValues[EventPropertyConstants.AwardYear].Value<string>().Substring(2, 2) + eventData.PropertyValues[EventPropertyConstants.AwardYear].Value<string>().Substring(7, 2))
             });
 
             parameters.Add(new OdbcParameter
             {
                 ParameterName = "TransactionCategoryId",
                 OdbcType = OdbcType.Int,
-                Value = eventData.SvTransactionCategoryId ?? 0
+                Value = eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].IsNullOrEmpty() ? 0 : eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].Value<int>()
             });
 
             parameters.Add(new OdbcParameter
             {
                 ParameterName = "EventNotificationId",
                 OdbcType = OdbcType.Int,
-                Value = eventData.EventNotificationId
+                Value = eventData.PropertyValues[EventPropertyConstants.EventNotificationId].Value<int>()
             });
 
-            if (eventData.SvDocumentId > 0)
+            if (!eventData.PropertyValues[EventPropertyConstants.SvDocumentId].IsNullOrEmpty() && eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>() > 0)
             {
                 var manager = new DocumentManager();
-                DocumentMetaData metaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+                DocumentMetaData metaData = manager.GetDocumentMetaData(eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>());
 
                 parameters.Add(new OdbcParameter
                 {
@@ -143,9 +144,11 @@ namespace CampusLogicEvents.Web.Models
             {
                 using (var dbContext = new CampusLogicContext())
                 {
-                    var eventData = notificationEvent.ToObject<EventNotificationData>();
+                    var eventData = new EventNotificationData(notificationEvent);
 
-                    var eventHandler = campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == eventData.EventNotificationId) ??
+                    int eventNotificationId = eventData.PropertyValues[EventPropertyConstants.EventNotificationId].Value<int>();
+
+                    var eventHandler = campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == eventNotificationId) ??
                                        campusLogicConfigSection.EventNotifications.Cast<EventNotificationHandler>().FirstOrDefault(x => x.EventNotificationId == 0); //If no specific handler was provided check for the catch all handler
 
                     if (eventHandler != null)
@@ -153,43 +156,51 @@ namespace CampusLogicEvents.Web.Models
                         //Enhance the Event Data for certain situations
 
                         //Check if the transaction category was one of the three appeal types
-                        if (eventData.SvTransactionCategoryId != null)
+                        if (!eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].IsNullOrEmpty())
                         {
-                            if (((TransactionCategory)eventData.SvTransactionCategoryId != TransactionCategory.Verification
-                                && (TransactionCategory)eventData.SvTransactionCategoryId != TransactionCategory.Generic) && eventData.EventNotificationName == "Transaction Completed")
+                            if (((TransactionCategory)eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].Value<int>() != TransactionCategory.Verification
+                                && (TransactionCategory)eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].Value<int>() != TransactionCategory.Generic) && eventData.PropertyValues[EventPropertyConstants.EventNotificationName].Value<string>() == "Transaction Completed")
                             {
-                                if (eventData.SvTransactionId == null)
+                                if (eventData.PropertyValues[EventPropertyConstants.SvTransactionId].IsNullOrEmpty())
                                 {
                                     throw new Exception("A transaction Id is needed to get the appeal meta data");
                                 }
                                 var manager = new AppealManager();
                                 manager.GetAuthorizationForSV();
-                                eventData.TransactionOutcomeId = manager.GetAppealMetaData((int)eventData.SvTransactionId).Result;
+                                eventData.PropertyValues[EventPropertyConstants.TransactionOutcomeId] = (int)manager.GetAppealMetaData(eventData.PropertyValues[EventPropertyConstants.SvTransactionId].Value<int>()).Result;
                             }
                         }
 
                         //Was a documentId sent over? If so, populate the Document Metadata.
-                        if (eventData.SvDocumentId > 0)
+                        if (!eventData.PropertyValues[EventPropertyConstants.SvDocumentId].IsNullOrEmpty() && eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>() > 0)
                         {
                             var manager = new DocumentManager();
-                            eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+                            DocumentMetaData documentMetaData = manager.GetDocumentMetaData(eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>());
+                            eventData.DocumentMetaData = documentMetaData;
                         }
 
                         //Check if this event notification is a communication event. If so, we need to call back to SV to get metadata about the communication
-                        if (eventData.EventNotificationId >= 300 && eventData.EventNotificationId <= 399)
+                        if (eventNotificationId >= 300 && eventNotificationId <= 399)
                         {
-                            if (eventData.AdditionalInfoId == null || eventData.AdditionalInfoId == 0)
+                            if (eventData.PropertyValues[EventPropertyConstants.AdditionalInfoId].IsNullOrEmpty() || eventData.PropertyValues[EventPropertyConstants.AdditionalInfoId].Value<int>() == 0)
                             {
                                 throw new Exception("An AdditionalInfoId is needed to get the communication event meta data");
                             }
                             var manager = new CommunicationManager();
                             manager.GetAuthorizationForSV();
-                            CommunicationActivityMetadata communicationActivityMetadata = manager.GetCommunicationActivityMetaData((int)eventData.AdditionalInfoId).Result;
-                            eventData.CommunicationBody = communicationActivityMetadata.Body;
-                            eventData.CommunicationTypeId = communicationActivityMetadata.CommunicationTypeId;
-                            eventData.CommunicationType = communicationActivityMetadata.CommunicationType;
-                            eventData.CommunicationAddress = communicationActivityMetadata.CommunicationAddress;
+                            CommunicationActivityMetadata communicationActivityMetadata = manager.GetCommunicationActivityMetaData(eventData.PropertyValues[EventPropertyConstants.AdditionalInfoId].Value<int>()).Result;
+                            eventData.CommunicationActivityMetadata = communicationActivityMetadata;
                         }
+
+                        //Check if this event notification is a Scholarship Universe Event (700's). If so, we need to call back to SU to get the metadata
+                        if (eventNotificationId >= 700 && eventNotificationId <= 799)
+                        {
+                            // TODO: 701 - Scholarship Award Posted
+                            // TODO: create 701 event in the DB too
+                        }
+
+                        // populate PropertyValues with all the values that have been gathered
+                        eventData.PopulatePropertyValues();
 
                         //Now Send it to the correct handler
                         if (eventHandler.HandleMethod == "DatabaseCommandNonQuery")
@@ -245,7 +256,8 @@ namespace CampusLogicEvents.Web.Models
                     }
 
                     //Update the received event with a processed date time
-                    var storedEvent = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == eventData.Id);
+                    var eventId = eventData.PropertyValues[EventPropertyConstants.Id].Value<string>();
+                    var storedEvent = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == eventId);
                     if (storedEvent != null)
                     {
                         storedEvent.ProcessedDateTime = DateTime.UtcNow;
@@ -274,7 +286,7 @@ namespace CampusLogicEvents.Web.Models
                 // Get the settings the user has defined for PowerFAIDS
                 var generalSettings = campusLogicConfigSection.PowerFaidsSettings;
 
-                var awardYearToken = eventData.AwardYear;
+                var awardYearToken = eventData.PropertyValues[EventPropertyConstants.AwardYear].Value<string>();
 
                 if (!string.IsNullOrEmpty(awardYearToken))
                 {
@@ -284,24 +296,23 @@ namespace CampusLogicEvents.Web.Models
                 var eventSettings = campusLogicConfigSection.PowerFaidsSettings.PowerFaidsSettingCollectionConfig.GetPowerFaidsSettingList();
 
                 var eventSetting = eventSettings
-                    .Where(e => eventData.SvTransactionCategoryId.HasValue && 
-                        eventData.SvTransactionCategoryId.Value.ToString() == e.TransactionCategory && 
-                        e.Event == eventData.EventNotificationId.ToString())
-                    .FirstOrDefault();
+                    .FirstOrDefault(e => !eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].IsNullOrEmpty() &&
+                                         eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].Value<string>() == e.TransactionCategory &&
+                                         e.Event == eventData.PropertyValues[EventPropertyConstants.EventNotificationId].Value<string>());
 
                 if (eventSetting != null)
                 {
                     var recordToProcess = new PowerFaidsDto()
                     {
-                        EventId = eventData.Id,
+                        EventId = eventData.PropertyValues[EventPropertyConstants.Id].Value<string>(),
                         AwardYearToken = awardYearToken,
-                        AlternateId = eventData.StudentId,
+                        AlternateId = eventData.PropertyValues[EventPropertyConstants.StudentId].Value<string>(),
                         FilePath = generalSettings.FilePath,
                         Outcome = eventSetting.Outcome,
                         ShortName = eventSetting.ShortName,
                         RequiredFor = eventSetting.RequiredFor,
                         Status = eventSetting.Status,
-                        EffectiveDate = eventData.DateTimeUtc.ToString("yyyy-MM-dd"),
+                        EffectiveDate = eventData.PropertyValues[EventPropertyConstants.DateTimeUtc].Value<DateTime>().ToString("yyyy-MM-dd"),
                         DocumentLock = eventSetting.DocumentLock,
                         VerificationOutcome = eventSetting.VerificationOutcome,
                         VerificationOutcomeLock = eventSetting.VerificationOutcomeLock
@@ -331,7 +342,7 @@ namespace CampusLogicEvents.Web.Models
                 }
                 else
                 {
-                    throw new Exception($"Error occured while processing PowerFAIDS record. Cannot find mapping for Event Notification: {eventData.EventNotificationId} and Transaction Category: {eventData.SvTransactionCategoryId}");
+                    throw new Exception($"Error occured while processing PowerFAIDS record. Cannot find mapping for Event Notification: {eventData.PropertyValues[EventPropertyConstants.EventNotificationId].Value<string>()} and Transaction Category: {eventData.PropertyValues[EventPropertyConstants.SvTransactionCategoryId].Value<string>()}");
                 }
             }
             catch (Exception e)
@@ -348,8 +359,7 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="databaseCommand"></param>
         private static void DatabaseCommandNonQueryHandler(EventNotificationData eventData, string databaseCommand)
         {
-            var documentValues = new EventPropertyValues(eventData);
-            var commandText = documentValues.ReplaceStringProperties(databaseCommand);
+            var commandText = eventData.ReplaceStringProperties(databaseCommand);
             ClientDatabaseManager.ExecuteDatabaseNonQuery(commandText);
         }
 
@@ -364,9 +374,8 @@ namespace CampusLogicEvents.Web.Models
             if (storedProcedureSettings != null)
             {
                 // Parse parameters based on config.
-                EventPropertyValues eventPropertyValues = new EventPropertyValues(eventData);
                 List<OdbcParameter> parameters =
-                    storedProcedureSettings.GetParameters().Select(p => ParseParameter(p, eventPropertyValues)).ToList();
+                    storedProcedureSettings.GetParameters().Select(p => ParseParameter(p, eventData)).ToList();
 
                 // For each parameter, need to add a placeholder "?" in the sql command.  
                 // This is just part of the ODBC syntax.
@@ -377,7 +386,7 @@ namespace CampusLogicEvents.Web.Models
                 }
 
                 // Final output should look like this: {CALL sproc_name (?, ?, ?)}
-                string command = string.Format("{{CALL {0}{1}}}", storedProcedureSettings.Name, placeholders);
+                string command = $"{{CALL {storedProcedureSettings.Name}{placeholders}}}";
 
                 ClientDatabaseManager.ExecuteDatabaseStoredProcedure(command, parameters);
             }
@@ -394,7 +403,7 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="parameterElement">Parameter definition from the config.</param>
         /// <param name="data">The event notification to pull the parameter's value from.</param>
         /// <returns></returns>
-        private static OdbcParameter ParseParameter(ParameterElement parameterElement, EventPropertyValues data)
+        private static OdbcParameter ParseParameter(ParameterElement parameterElement, EventNotificationData data)
         {
             try
             {
@@ -405,7 +414,7 @@ namespace CampusLogicEvents.Web.Models
                 OdbcType odbcType = (OdbcType)Enum.Parse(typeof(OdbcType), odbcTypeMatch);
 
                 // Get property from the data using a string.
-                object value = data.GetType().GetProperty(parameterElement.Source).GetValue(data);
+                object value = data.PropertyValues[parameterElement.Source].Value<string>();
 
                 // Build return object.
                 var parameter = new OdbcParameter
@@ -433,20 +442,20 @@ namespace CampusLogicEvents.Web.Models
         {
             var manager = new DocumentManager();
 
-            if (eventData.SvDocumentId == null)
+            if (eventData.PropertyValues[EventPropertyConstants.SvDocumentId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.Id);
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
                 return;
             }
 
             //First make sure we have the document metadata otherwise get it
             if (eventData.DocumentMetaData.Id == 0)
             {
-                eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.SvDocumentId.Value);
+                eventData.DocumentMetaData = manager.GetDocumentMetaData(eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>());
             }
 
             //Get and Store the Documents
-            var dataFiles = manager.GetDocumentFiles(eventData.SvDocumentId.Value, eventData);
+            var dataFiles = manager.GetDocumentFiles(eventData.PropertyValues[EventPropertyConstants.SvDocumentId].Value<int>(), eventData);
 
             //If required create an index file
             if (dataFiles.Any() && (campusLogicConfigSection.DocumentSettings.IndexFileEnabled ?? false))
@@ -461,7 +470,7 @@ namespace CampusLogicEvents.Web.Models
         /// <param name="eventData"></param>
         private static void BatchProcessRetrievalHandler(string type, string name, EventNotificationData eventData)
         {
-            var message = JsonConvert.SerializeObject(eventData).Replace("'", "''");
+            var message = eventData.PropertyValues.ToString().Replace("'", "''");
 
             using (var dbContext = new CampusLogicContext())
             {
@@ -480,16 +489,15 @@ namespace CampusLogicEvents.Web.Models
         {
             var manager = new DocumentManager();
 
-            if (eventData.AlRecordId == null)
+            if (eventData.PropertyValues[EventPropertyConstants.AlRecordId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.Id);
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
                 return;
             }
 
             //Get and Store the Documents
-            manager.GetAwardLetterPdfFile(eventData.AlRecordId.Value, eventData);
+            manager.GetAwardLetterPdfFile(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>(), eventData);
         }
-
 
         /// <summary>
         /// The File Store Handler. Surprise!
@@ -500,9 +508,9 @@ namespace CampusLogicEvents.Web.Models
             {
                 using (var dbContext = new CampusLogicContext())
                 {
-                    var dataToSerialize = JsonConvert.SerializeObject(eventData).Replace("'", "''");
+                    var dataToSerialize = eventData.PropertyValues.ToString().Replace("'", "''");
                     //Insert the event into the EventNotification table so that it can be processed by the Automated File Store job.
-                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[EventNotification]([EventNotificationId], [Message], [CreatedDateTime], [ProcessGuid]) VALUES({eventData.EventNotificationId}, '{dataToSerialize}', GetUtcDate(), NULL)");
+                    dbContext.Database.ExecuteSqlCommand($"INSERT INTO [dbo].[EventNotification]([EventNotificationId], [Message], [CreatedDateTime], [ProcessGuid]) VALUES({eventData.PropertyValues[EventPropertyConstants.EventNotificationId].Value<int>()}, '{dataToSerialize}', GetUtcDate(), NULL)");
                 }
             }
             catch (Exception ex)
@@ -541,7 +549,7 @@ namespace CampusLogicEvents.Web.Models
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                         Convert.ToBase64String(
                             Encoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
+                                $"{apiIntegration.Username}:{apiIntegration.Password}")));
 
                     var body = "grant_type=client_credentials";
 
@@ -616,7 +624,7 @@ namespace CampusLogicEvents.Web.Models
 
             logger.InfoFormat("API Integration - Request: {0}", request);
         }
-        
+
         /// <summary>
         /// Handles an HTTP request for an endpoint.
         /// </summary>
@@ -628,13 +636,13 @@ namespace CampusLogicEvents.Web.Models
             {
                 using (var httpClient = new System.Net.Http.HttpClient())
                 {
-                    var apiEndpoint = campusLogicConfigSection.ApiEndpoints.GetEndpoints().Where(e => e.Name == endpointName).FirstOrDefault();
+                    var apiEndpoint = campusLogicConfigSection.ApiEndpoints.GetEndpoints().FirstOrDefault(e => e.Name == endpointName);
                     if (apiEndpoint == null)
                     {
                         throw new Exception("Invalid API Endpoint");
                     }
 
-                    var apiIntegration = campusLogicConfigSection.ApiIntegrations.GetApiIntegrations().Where(a => a.ApiId == apiEndpoint.ApiId).FirstOrDefault();
+                    var apiIntegration = campusLogicConfigSection.ApiIntegrations.GetApiIntegrations().FirstOrDefault(a => a.ApiId == apiEndpoint.ApiId);
                     if (apiIntegration == null)
                     {
                         throw new Exception("Invalid API Integration");
@@ -646,7 +654,7 @@ namespace CampusLogicEvents.Web.Models
                     httpClient.Timeout = new TimeSpan(0, 5, 0);
 
                     // Custom header for API service to track requests
-                    httpClient.DefaultRequestHeaders.Add("EventId", eventData.Id);
+                    httpClient.DefaultRequestHeaders.Add("EventId", eventData.PropertyValues[EventPropertyConstants.Id].Value<string>());
 
                     var authType = apiIntegration.Authentication;
                     switch (authType)
@@ -655,7 +663,7 @@ namespace CampusLogicEvents.Web.Models
                             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                                 Convert.ToBase64String(
                                     Encoding.ASCII.GetBytes(
-                                        string.Format("{0}:{1}", apiIntegration.Username, apiIntegration.Password))));
+                                        $"{apiIntegration.Username}:{apiIntegration.Password}")));
                             break;
                         case ConfigConstants.OAuth2:
                             var oauth2Token = GetOauth2TokenAsync(apiIntegration).Result;
@@ -671,14 +679,13 @@ namespace CampusLogicEvents.Web.Models
 
                     // use the eventdata and its values to link up to the endpoint's parameters
                     var parameterMappings = JArray.Parse(apiEndpoint.ParameterMappings);
-                    var eventPropertyValues = new EventPropertyValues(eventData);
                     NameValueCollection eventParams = new NameValueCollection();
 
                     // foreach mapping, get event property, find its corresponding eventdata, get that eventdata's value, attach it to the parameter in mapping
                     foreach (JObject mapping in parameterMappings)
                     {
-                        var eventValue = eventPropertyValues.GetType().GetProperty(mapping.Value<string>("eventData")).GetValue(eventPropertyValues, null);
-                        eventParams.Add(mapping.Value<string>("parameter"), eventValue.ToString());
+                        var eventValue = eventData.PropertyValues[mapping["eventData"].Value<string>()].Value<string>();
+                        eventParams.Add(mapping["parameter"].Value<string>(), eventValue);
                     }
 
                     HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -691,12 +698,12 @@ namespace CampusLogicEvents.Web.Models
                         case WebRequestMethods.Http.Get:
                             var array = (from key in eventParams.AllKeys
                                          from value in eventParams.GetValues(key)
-                                         select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value))).ToArray();
+                                         select $"{HttpUtility.UrlEncode(key)}={HttpUtility.UrlEncode(value)}").ToArray();
                             endpoint += "?" + string.Join("&", array);
                             response = httpClient.GetAsync(endpoint).Result;
                             break;
                         case WebRequestMethods.Http.Post:
-                            response = httpClient.PostAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;                            
+                            response = httpClient.PostAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;
                             break;
                         case WebRequestMethods.Http.Put:
                             response = httpClient.PutAsync(endpoint, GetHttpContent(eventParams, apiEndpoint.MimeType)).Result;

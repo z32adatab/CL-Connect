@@ -12,7 +12,7 @@
         $scope.setDocumentSettings = setDocumentSettings;
         $scope.environmentDropDownChangeEvent = environmentDropDownChangeEvent;
         $scope.addRemovePageFromValidation = addRemovePageFromValidation;
-
+        
         if (!$scope.service.configurationModel) {
             $scope.service.configurationModel = configurations;
             //temp workaround for deserialization issue              
@@ -29,6 +29,10 @@
         if (!$scope.validationService.pageValidations) {
             $scope.validationService.pageValidations = pageValidations;
         }
+
+        // update event properties each time the setup wizard loads 
+        // (starts on environment page)
+        setupservice.updateEventProperties.save();
 
         function setDocumentSettings() {
             if (!$scope.service.configurationModel.campusLogicSection.eventNotifications.eventNotificationsEnabled) {
