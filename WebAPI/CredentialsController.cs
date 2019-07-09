@@ -5,6 +5,7 @@ using CampusLogicEvents.Implementation;
 using System;
 using System.Net;
 using System.Collections.Generic;
+using System.Configuration;
 using CampusLogicEvents.Implementation.Configurations;
 
 namespace CampusLogicEvents.Web.WebAPI
@@ -29,12 +30,30 @@ namespace CampusLogicEvents.Web.WebAPI
         {
             try
             {
-                string stsURL = string.Empty;
-                List<string> apiURLs = new List<string>();
+                string stsURL;
+                var apiURLs = new List<string>();
 
-                switch (environment)
+                // Check for "disable auto update"
+                var disableAutoUpdate = false;
+                var value = ConfigurationManager.AppSettings["DisableAutoUpdate"] ?? "false";
+                bool.TryParse(value, out disableAutoUpdate);
+
+                if (disableAutoUpdate)
                 {
-                    case SANDBOX:
+                    // use the values from web.config, not the ApiUrlConstants
+                    apiURLs.Add(ConfigurationManager.AppSettings["SvWebApiUrl"]);
+                    if (awardLetterUploadEnabled)
+                    {
+                        apiURLs.Add(ConfigurationManager.AppSettings["AwardLetterWebAPIURL"]);
+                    }
+                    stsURL = ConfigurationManager.AppSettings["StsUrl"];
+                }
+                // else, use the environment ApiUrlConstants
+                else
+                {
+                    switch (environment)
+                    {
+                        case SANDBOX:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
                             if (awardLetterUploadEnabled)
@@ -44,7 +63,7 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_SANDBOX;
                             break;
                         }
-                    case PRODUCTION:
+                        case PRODUCTION:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_PRODUCTION);
                             if (awardLetterUploadEnabled)
@@ -54,7 +73,7 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_PRODUCTION;
                             break;
                         }
-                    default:
+                        default:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
                             if (awardLetterUploadEnabled)
@@ -64,8 +83,9 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_SANDBOX;
                             break;
                         }
+                    }
                 }
-                CredentialsManager credentialsManager = new CredentialsManager();
+                var credentialsManager = new CredentialsManager();
                 HttpResponseMessage response = credentialsManager.GetAuthorizationToken(username, password, apiURLs, stsURL);
 
                 return response;
