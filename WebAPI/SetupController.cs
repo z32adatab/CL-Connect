@@ -22,8 +22,6 @@ namespace CampusLogicEvents.Web.WebAPI
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
 
-        private const string SANDBOX_ENVIRONMENT = "sandbox";
-
         public SetupController()
         {
 
@@ -505,7 +503,7 @@ namespace CampusLogicEvents.Web.WebAPI
                 appSettings.Settings["ClientValidationEnabled"].Value = "true";
                 appSettings.Settings["UnobtrusiveJavaScriptEnabled"].Value = "true";
 
-                if (appSettings.Settings["Environment"].Value == SANDBOX_ENVIRONMENT)
+                if (appSettings.Settings["Environment"].Value == EnvironmentConstants.SANDBOX)
                 {
                     appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STSURL_SANDBOX;
                     appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_SANDBOX;
@@ -663,6 +661,29 @@ namespace CampusLogicEvents.Web.WebAPI
             try
             {
                 EventPropertyService.UpdateEventPropertyData();
+                return Request.CreateResponse(HttpStatusCode.OK);
+            }
+            catch (Exception e)
+            {
+                logger.ErrorFormat("SetupController GetCurrentConfigurations Error: {0}", e);
+                return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
+            }
+        }
+
+        /// <summary>
+        /// Get the latest EventProperties from PM and backup to CL local db.
+        /// If PM is unavailable, use the values in the CL local db.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="environment"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public HttpResponseMessage UpdateEventProperties(string username, string password, string environment)
+        {
+            try
+            {
+                EventPropertyService.UpdateEventPropertyData(username, password, environment);
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
             catch (Exception e)

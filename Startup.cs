@@ -97,7 +97,7 @@ namespace CampusLogicEvents.Web
 
                 // Get the current STS and the expected STS
                 var currentSts = ConfigurationManager.AppSettings["StsUrl"];
-                var expectedSts = string.Equals("sandbox", environment, StringComparison.InvariantCultureIgnoreCase)
+                var expectedSts = string.Equals(EnvironmentConstants.SANDBOX, environment, StringComparison.InvariantCultureIgnoreCase)
                     ? ApiUrlConstants.STSURL_SANDBOX : ApiUrlConstants.STSURL_PRODUCTION;
                 if (!string.Equals(expectedSts, currentSts, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -133,8 +133,6 @@ namespace CampusLogicEvents.Web
             VerifyEventNotificationTableExists();
             //Does the EventProperty table exist? If not, create it.
             VerifyEventPropertyTableExists();
-            //Update the data in the EventProperty table
-            EventPropertyService.UpdateEventPropertyData();
 
             bool? filestoreEnabled = campusLogicSection.FileStoreSettings.FileStoreEnabled;
 

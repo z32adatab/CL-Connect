@@ -5,7 +5,6 @@ using CampusLogicEvents.Implementation;
 using System;
 using System.Net;
 using System.Collections.Generic;
-using System.Configuration;
 using CampusLogicEvents.Implementation.Configurations;
 
 namespace CampusLogicEvents.Web.WebAPI
@@ -14,12 +13,6 @@ namespace CampusLogicEvents.Web.WebAPI
     {
 
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
-
-        #region constants 
-        private const string SANDBOX = "sandbox";
-        private const string PRODUCTION = "production";
-        
-        #endregion constants
 
         public CredentialsController()
         {
@@ -30,32 +23,15 @@ namespace CampusLogicEvents.Web.WebAPI
         {
             try
             {
-                string stsURL;
-                var apiURLs = new List<string>();
+                string stsURL = string.Empty;
+                List<string> apiURLs = new List<string>();
 
-                // Check for "disable auto update"
-                var disableAutoUpdate = false;
-                var value = ConfigurationManager.AppSettings["DisableAutoUpdate"] ?? "false";
-                bool.TryParse(value, out disableAutoUpdate);
-
-                if (disableAutoUpdate)
+                switch (environment)
                 {
-                    // use the values from web.config, not the ApiUrlConstants
-                    apiURLs.Add(ConfigurationManager.AppSettings["SvWebApiUrl"]);
-                    if (awardLetterUploadEnabled)
-                    {
-                        apiURLs.Add(ConfigurationManager.AppSettings["AwardLetterWebAPIURL"]);
-                    }
-                    stsURL = ConfigurationManager.AppSettings["StsUrl"];
-                }
-                // else, use the environment ApiUrlConstants
-                else
-                {
-                    switch (environment)
-                    {
-                        case SANDBOX:
+                    case EnvironmentConstants.SANDBOX:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.PM_APIURL_SANDBOX);
                             if (awardLetterUploadEnabled)
                             {
                                 apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
@@ -63,9 +39,10 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_SANDBOX;
                             break;
                         }
-                        case PRODUCTION:
+                    case EnvironmentConstants.PRODUCTION:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_PRODUCTION);
+                            apiURLs.Add(ApiUrlConstants.PM_APIURL_PRODUCTION);
                             if (awardLetterUploadEnabled)
                             {
                                 apiURLs.Add(ApiUrlConstants.AL_APIURL_PRODUCTION);
@@ -73,9 +50,10 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_PRODUCTION;
                             break;
                         }
-                        default:
+                    default:
                         {
                             apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.PM_APIURL_SANDBOX);
                             if (awardLetterUploadEnabled)
                             {
                                 apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
@@ -83,9 +61,8 @@ namespace CampusLogicEvents.Web.WebAPI
                             stsURL = ApiUrlConstants.STSURL_SANDBOX;
                             break;
                         }
-                    }
                 }
-                var credentialsManager = new CredentialsManager();
+                CredentialsManager credentialsManager = new CredentialsManager();
                 HttpResponseMessage response = credentialsManager.GetAuthorizationToken(username, password, apiURLs, stsURL);
 
                 return response;

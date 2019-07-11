@@ -688,6 +688,13 @@
                         function () {
                             service.pageValidations.apiCredentialsTested = true;
                             service.pageValidations.apiCredentialsValid = true;
+                            // if credentials are valid, get EventProperties from PM
+                            setupservice.updateEventPropertiesWithCredentials.save(
+                            {
+                                username: setupservice.configurationModel.appSettingsSection.apiUsername,
+                                password: setupservice.configurationModel.appSettingsSection.apiPassword,
+                                environment: setupservice.configurationModel.appSettingsSection.environment
+                            });
                         },
                         function () {
                             service.pageValidations.apiCredentialsTested = true;

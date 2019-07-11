@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("CampusLogicEvents.Web")]
-[assembly: AssemblyDescription("Build: 20190709.3 - Commit: 16577")]
+[assembly: AssemblyDescription("Build: 20190711.1 - Commit: 16653")]
 [assembly: AssemblyConfiguration("release")]
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("CampusLogicEvents.Web")]
