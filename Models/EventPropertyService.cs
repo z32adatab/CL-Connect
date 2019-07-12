@@ -16,7 +16,7 @@ namespace CampusLogicEvents.Web.Models
         /// </summary>
         public static void UpdateEventPropertyData()
         {
-            var updateFromPmSuccessful = EventPropertyManager.Instance.TryUpdateProperties();
+            var updateFromPmSuccessful = EventPropertyManager.Instance.TryUpdatePropertiesAsync().Result;
             UpdateData(updateFromPmSuccessful);
         }
 
@@ -30,7 +30,7 @@ namespace CampusLogicEvents.Web.Models
         public static void UpdateEventPropertyData(string username, string password, string environment)
         {
             var updateFromPmSuccessful =
-                EventPropertyManager.Instance.TryUpdateProperties(username, password, environment);
+                EventPropertyManager.Instance.TryUpdatePropertiesAsync(username, password, environment).Result;
             UpdateData(updateFromPmSuccessful);
         }
 
