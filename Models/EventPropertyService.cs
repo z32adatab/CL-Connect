@@ -62,7 +62,7 @@ namespace CampusLogicEvents.Web.Models
                         catch (Exception e)
                         {
                             tran.Rollback();
-                            logger.Error($"EventPropertyService UpdateEventPropertyData Error: {e}");
+                            logger.Error($"EventPropertyService UpdateData Error: {e}");
                         }
                     }
                 }

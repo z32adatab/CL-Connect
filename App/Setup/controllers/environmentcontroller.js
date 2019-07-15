@@ -4,9 +4,9 @@
     angular.module('clConnectControllers')
     .controller('environmentcontroller', environmentcontroller);
 
-    environmentcontroller.$inject = ['$scope', 'setupservice', 'validationservice', 'configurations', 'pageValidations'];
+    environmentcontroller.$inject = ['$scope', 'setupservice', 'validationservice', 'eventpropertyservice', 'configurations', 'pageValidations'];
 
-    function environmentcontroller($scope, setupservice, validationservice, configurations, pageValidations) {
+    function environmentcontroller($scope, setupservice, validationservice, eventpropertyservice, configurations, pageValidations) {
         $scope.service = setupservice;
         $scope.validationService = validationservice;
         $scope.setDocumentSettings = setDocumentSettings;
@@ -32,7 +32,14 @@
 
         // update event properties each time the setup wizard loads 
         // (starts on environment page)
-        setupservice.updateEventProperties.save();
+        eventpropertyservice.updateEventProperties.save({},
+            function() {
+                eventpropertyservice.getEventPropertyDisplayNames.query({},
+                    function(data) {
+                        setupservice.configurationModel.campusLogicSection
+                            .eventPropertyValueAvailableProperties = data;
+                    });
+            });
 
         function setDocumentSettings() {
             if (!$scope.service.configurationModel.campusLogicSection.eventNotifications.eventNotificationsEnabled) {

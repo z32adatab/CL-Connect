@@ -651,49 +651,6 @@ namespace CampusLogicEvents.Web.WebAPI
         }
 
         /// <summary>
-        /// Get the latest EventProperties from PM and backup to CL local db.
-        /// If PM is unavailable, use the values in the CL local db.
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        public HttpResponseMessage UpdateEventProperties()
-        {
-            try
-            {
-                EventPropertyService.UpdateEventPropertyData();
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
-            catch (Exception e)
-            {
-                logger.ErrorFormat("SetupController GetCurrentConfigurations Error: {0}", e);
-                return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
-            }
-        }
-
-        /// <summary>
-        /// Get the latest EventProperties from PM and backup to CL local db.
-        /// If PM is unavailable, use the values in the CL local db.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="password"></param>
-        /// <param name="environment"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public HttpResponseMessage UpdateEventProperties(string username, string password, string environment)
-        {
-            try
-            {
-                EventPropertyService.UpdateEventPropertyData(username, password, environment);
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
-            catch (Exception e)
-            {
-                logger.ErrorFormat("SetupController GetCurrentConfigurations Error: {0}", e);
-                return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
-            }
-        }
-
-        /// <summary>
         /// Undo camel casing that is 
         /// caused when appSettings is sent 
         /// to the client side
