@@ -201,12 +201,18 @@ namespace CampusLogicEvents.Web.WebAPI
                     }
                 }
 
-                //PMWebApiUrl is a newer setting that's needed for use with some newer datafile intergrations
+                //PMWebApiUrl is a newer setting that's needed for use with some newer datafile integrations
                 if (!appSettings.ContainsKey("PmWebApiUrl"))
                 {
                     appSettings.Add("PmWebApiUrl", "");
                 }
-                
+
+                //SUWebApiUrl is a newer setting that's needed for use with some newer datafile integrations
+                if (!appSettings.ContainsKey("SuWebApiUrl"))
+                {
+                    appSettings.Add("SuWebApiUrl", "");
+                }
+
                 if (response.CampusLogicSection.EventNotifications.Count > 0)
                 {
                     response.CampusLogicSection.EventNotificationsEnabled = true;
@@ -505,17 +511,19 @@ namespace CampusLogicEvents.Web.WebAPI
 
                 if (appSettings.Settings["Environment"].Value == EnvironmentConstants.SANDBOX)
                 {
-                    appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STSURL_SANDBOX;
-                    appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_SANDBOX;
-                    appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_APIURL_SANDBOX;
-                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_APIURL_SANDBOX;
+                    appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STS_URL_SANDBOX;
+                    appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_API_URL_SANDBOX;
+                    appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_API_URL_SANDBOX;
+                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_API_URL_SANDBOX;
+                    appSettings.Settings["SuWebApiUrl"].Value = ApiUrlConstants.SU_API_URL_SANDBOX;
                 }
                 else
                 {
-                    appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STSURL_PRODUCTION;
-                    appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_APIURL_PRODUCTION;
-                    appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_APIURL_PRODUCTION;
-                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_APIURL_PRODUCTION;
+                    appSettings.Settings["StsUrl"].Value = ApiUrlConstants.STS_URL_PRODUCTION;
+                    appSettings.Settings["SvWebApiUrl"].Value = ApiUrlConstants.SV_API_URL_PRODUCTION;
+                    appSettings.Settings["AwardLetterWebApiUrl"].Value = ApiUrlConstants.AL_API_URL_PRODUCTION;
+                    appSettings.Settings["PmWebApiUrl"].Value = ApiUrlConstants.PM_API_URL_PRODUCTION;
+                    appSettings.Settings["SuWebApiUrl"].Value = ApiUrlConstants.SU_API_URL_PRODUCTION;
                 }
 
                 ClearOldFileDefinitions(campusLogicSection);

@@ -195,8 +195,15 @@ namespace CampusLogicEvents.Web.Models
                         //Check if this event notification is a Scholarship Universe Event (700's). If so, we need to call back to SU to get the metadata
                         if (eventNotificationId >= 700 && eventNotificationId <= 799)
                         {
-                            // TODO: 701 - Scholarship Award Posted
-                            // TODO: create 701 event in the DB too
+                            if (eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].IsNullOrEmpty() || eventData.PropertyValues[EventPropertyConstants.SuClientTermId].IsNullOrEmpty())
+                            {
+                                throw new Exception("SuScholarshipAwardId and SuClientTermId are needed to get the award post item event data");
+                            }
+                            var manager = new ScholarshipManager();
+                            AwardPostItemData awardPostItemData = manager.GetAwardPostItemData(
+                                eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].Value<int>(),
+                                eventData.PropertyValues[EventPropertyConstants.SuClientTermId].Value<int>());
+                            eventData.AwardPostItemData = awardPostItemData;
                         }
 
                         // populate PropertyValues with all the values that have been gathered

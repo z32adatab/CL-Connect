@@ -98,7 +98,7 @@ namespace CampusLogicEvents.Web
                 // Get the current STS and the expected STS
                 var currentSts = ConfigurationManager.AppSettings["StsUrl"];
                 var expectedSts = string.Equals(EnvironmentConstants.SANDBOX, environment, StringComparison.InvariantCultureIgnoreCase)
-                    ? ApiUrlConstants.STSURL_SANDBOX : ApiUrlConstants.STSURL_PRODUCTION;
+                    ? ApiUrlConstants.STS_URL_SANDBOX : ApiUrlConstants.STS_URL_PRODUCTION;
                 if (!string.Equals(expectedSts, currentSts, StringComparison.InvariantCultureIgnoreCase))
                 {
                     // STS update needed
