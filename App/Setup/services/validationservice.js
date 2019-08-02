@@ -5,9 +5,9 @@
         .module('clConnectServices')
         .factory('validationservice', validationservice);
 
-    validationservice.$inject = ['$q', '$resource', 'setupservice', '$rootScope'];
+    validationservice.$inject = ['$q', '$resource', 'setupservice', 'eventpropertyservice', '$rootScope'];
 
-    function validationservice($q, $resource, setupservice, $rootScope) {
+    function validationservice($q, $resource, setupservice, eventpropertyservice, $rootScope) {
         var service = {
             eventNotificationTypes: $resource('api/eventNotifications/EventNotificationTypes'),
             testApiCredentials: $resource('api/Credentials/TestAPICredentials/', { username: "@username", password: "@password", environment: "@environment" }),
@@ -679,20 +679,35 @@
                     service.pageValidations.apiCredentialsTested = false;
                     service.testApiCredentials
                         .get(
-                        {
-                            username: setupservice.configurationModel.appSettingsSection.apiUsername,
-                            password: setupservice.configurationModel.appSettingsSection.apiPassword,
-                            environment: setupservice.configurationModel.appSettingsSection.environment,
-                            awardLetterUploadEnabled: setupservice.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadEnabled
-                        },
-                        function () {
-                            service.pageValidations.apiCredentialsTested = true;
-                            service.pageValidations.apiCredentialsValid = true;
-                        },
-                        function () {
-                            service.pageValidations.apiCredentialsTested = true;
-                            service.pageValidations.apiCredentialsValid = false;
-                        });
+                            {
+                                username: setupservice.configurationModel.appSettingsSection.apiUsername,
+                                password: setupservice.configurationModel.appSettingsSection.apiPassword,
+                                environment: setupservice.configurationModel.appSettingsSection.environment,
+                                awardLetterUploadEnabled: setupservice.configurationModel.campusLogicSection
+                                    .awardLetterUploadSettings.awardLetterUploadEnabled
+                            },
+                            function() {
+                                service.pageValidations.apiCredentialsTested = true;
+                                service.pageValidations.apiCredentialsValid = true;
+                                // if credentials are valid, update EventProperties from PM
+                                eventpropertyservice.updateEventPropertiesWithCredentials.save(
+                                    {
+                                        username: setupservice.configurationModel.appSettingsSection.apiUsername,
+                                        password: setupservice.configurationModel.appSettingsSection.apiPassword,
+                                        environment: setupservice.configurationModel.appSettingsSection.environment
+                                    },
+                                    function() {
+                                        eventpropertyservice.getEventPropertyDisplayNames.query({},
+                                            function(data) {
+                                                setupservice.configurationModel.campusLogicSection
+                                                    .eventPropertyValueAvailableProperties = data;
+                                            });
+                                    });
+                            },
+                            function() {
+                                service.pageValidations.apiCredentialsTested = true;
+                                service.pageValidations.apiCredentialsValid = false;
+                            });
                 }
             }
             catch (exception) {

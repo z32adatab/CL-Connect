@@ -27,6 +27,15 @@
           <Property Name="CreatedDateTime" Type="datetime" Nullable="false" />
           <Property Name="ProcessGuid" Type="uniqueidentifier" />
         </EntityType>
+        <EntityType Name="EventProperty">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Name" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="DisplayName" Type="nvarchar" MaxLength="200" Nullable="false" />
+          <Property Name="DisplayFormula" Type="nvarchar" MaxLength="2000" Nullable="false" />
+        </EntityType>
         <EntityType Name="Log">
           <Key>
             <PropertyRef Name="Id" />
@@ -201,6 +210,7 @@
         <EntityContainer Name="CampusLogicEventsModelStoreContainer">
           <EntitySet Name="BatchProcessRecord" EntityType="Self.BatchProcessRecord" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="EventNotification" EntityType="Self.EventNotification" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="EventProperty" EntityType="Self.EventProperty" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Log" EntityType="Self.Log" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="NotificationLog" EntityType="Self.NotificationLog" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PowerFaidsRecord" EntityType="Self.PowerFaidsRecord" Schema="dbo" store:Type="Tables" />
@@ -255,6 +265,7 @@
           <EntitySet Name="EventNotifications" EntityType="CampusLogicEvents.Model.EventNotification" />
           <EntitySet Name="BatchProcessRecords" EntityType="CampusLogicEvents.Model.BatchProcessRecord" />
           <EntitySet Name="PowerFaidsRecords" EntityType="CampusLogicEvents.Model.PowerFaidsRecord" />
+          <EntitySet Name="EventProperty" EntityType="CampusLogicEvents.Model.EventProperty" />
         </EntityContainer>
         <EntityType Name="AggregatedCounter">
           <Key>
@@ -453,6 +464,15 @@
           <Property Name="Json" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="false" />
           <Property Name="ProcessGuid" Type="Guid" />
         </EntityType>
+        <EntityType Name="EventProperty">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="DisplayName" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="DisplayFormula" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -637,6 +657,16 @@
               <MappingFragment StoreEntitySet="PowerFaidsRecord">
                 <ScalarProperty Name="ProcessGuid" ColumnName="ProcessGuid" />
                 <ScalarProperty Name="Json" ColumnName="Json" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EventProperty">
+            <EntityTypeMapping TypeName="CampusLogicEvents.Model.EventProperty">
+              <MappingFragment StoreEntitySet="EventProperty">
+                <ScalarProperty Name="DisplayFormula" ColumnName="DisplayFormula" />
+                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>

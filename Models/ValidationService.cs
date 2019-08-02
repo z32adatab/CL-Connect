@@ -14,8 +14,6 @@ namespace CampusLogicEvents.Web.Models
     public static class ValidationService
     {
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
-        private const string SANDBOX_ENVIRONMENT = "sandbox";
-        private const string PROD_ENVIRONMENT = "production";
 
         /// <summary>
         /// Validate all of the enabled sections
@@ -393,10 +391,10 @@ namespace CampusLogicEvents.Web.Models
         public static HttpResponseMessage ValidateEnvironment(Dictionary<string, string> applicationAppSettingsSection)
         {
             //Ensure that the environment was set appropriately
-            if (applicationAppSettingsSection["environment"] != SANDBOX_ENVIRONMENT
-                && applicationAppSettingsSection["environment"] != PROD_ENVIRONMENT)
+            if (applicationAppSettingsSection["environment"] != EnvironmentConstants.SANDBOX
+                && applicationAppSettingsSection["environment"] != EnvironmentConstants.PRODUCTION)
             {
-                logger.Fatal($"Enivronment required to save new configurations, environment: {applicationAppSettingsSection["environment"] } is invalid");
+                logger.Fatal($"Environment required to save new configurations, environment: {applicationAppSettingsSection["environment"] } is invalid");
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
             }
 
@@ -414,56 +412,48 @@ namespace CampusLogicEvents.Web.Models
 
             switch (applicationAppSettingsSection["environment"])
             {
-                case SANDBOX_ENVIRONMENT:
+                case EnvironmentConstants.SANDBOX:
                     {
-                        apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                        apiURLs.Add(ApiUrlConstants.SV_API_URL_SANDBOX);
+                        apiURLs.Add(ApiUrlConstants.PM_API_URL_SANDBOX);
                         if (awardLetterUploadEnabled)
                         {
-                            apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.AL_API_URL_SANDBOX);
                         }
-                        stsUrl = ApiUrlConstants.STSURL_SANDBOX;
+                        stsUrl = ApiUrlConstants.STS_URL_SANDBOX;
                         break;
                     }
-                case PROD_ENVIRONMENT:
+                case EnvironmentConstants.PRODUCTION:
                     {
-                        apiURLs.Add(ApiUrlConstants.SV_APIURL_PRODUCTION);
+                        apiURLs.Add(ApiUrlConstants.SV_API_URL_PRODUCTION);
+                        apiURLs.Add(ApiUrlConstants.PM_API_URL_PRODUCTION);
                         if (awardLetterUploadEnabled)
                         {
-                            apiURLs.Add(ApiUrlConstants.AL_APIURL_PRODUCTION);
+                            apiURLs.Add(ApiUrlConstants.AL_API_URL_PRODUCTION);
                         }
-                        stsUrl = ApiUrlConstants.STSURL_PRODUCTION;
+                        stsUrl = ApiUrlConstants.STS_URL_PRODUCTION;
                         break;
                     }
                 default:
                     {
-                        apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                        apiURLs.Add(ApiUrlConstants.SV_API_URL_SANDBOX);
+                        apiURLs.Add(ApiUrlConstants.PM_API_URL_SANDBOX);
                         if (awardLetterUploadEnabled)
                         {
-                            apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.AL_API_URL_SANDBOX);
                         }
-                        stsUrl = ApiUrlConstants.STSURL_SANDBOX;
+                        stsUrl = ApiUrlConstants.STS_URL_SANDBOX;
                         break;
                     }
             }
             CredentialsManager credentialsManager = new CredentialsManager();
 
-            //Ensure the SV API Credentials are valid, we always check this 
-            var svCredentialsResponse = credentialsManager.GetAuthorizationToken(applicationAppSettingsSection["apiUsername"], applicationAppSettingsSection["apiPassword"], apiURLs, stsUrl);
-            if (!svCredentialsResponse.IsSuccessStatusCode)
+            //Ensure ALL Credentials are valid
+            var credentialsResponse = credentialsManager.GetAuthorizationToken(applicationAppSettingsSection["apiUsername"], applicationAppSettingsSection["apiPassword"], apiURLs, stsUrl);
+            if (!credentialsResponse.IsSuccessStatusCode)
             {
-                logger.Fatal($"API Credentials for Student Verification are not valid, username: {applicationAppSettingsSection["apiUsername"]}, password: {applicationAppSettingsSection["apiPassword"]}");
+                logger.Fatal($"API Credentials are not valid, username: {applicationAppSettingsSection["apiUsername"]}, password: {applicationAppSettingsSection["apiPassword"]}");
                 return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
-            }
-
-            //Ensure the Award Letter API Credentials are valid, we only check this if award letter upload is being used
-            if (awardLetterUploadEnabled)
-            {
-                var alCredentialsResponse = credentialsManager.GetAuthorizationToken(applicationAppSettingsSection["apiUsername"], applicationAppSettingsSection["apiPassword"], apiURLs, stsUrl);
-                if (!alCredentialsResponse.IsSuccessStatusCode)
-                {
-                    logger.Fatal($"API Credentials for Award Letter are not valid, username: {applicationAppSettingsSection["apiUsername"]}, password: {applicationAppSettingsSection["apiPassword"]}");
-                    return new HttpResponseMessage(HttpStatusCode.ExpectationFailed);
-                }
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK);

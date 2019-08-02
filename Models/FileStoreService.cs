@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Runtime.InteropServices;
 using CampusLogicEvents.Implementation;
 using CampusLogicEvents.Implementation.Configurations;
 using CampusLogicEvents.Implementation.Models;
 using Hangfire;
 using log4net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CampusLogicEvents.Web.Models
 {
@@ -60,12 +62,11 @@ namespace CampusLogicEvents.Web.Models
                             var sharedEventsToProcess =
                                 dbContext.EventNotifications
                                 .Where(e => sharedEvents.Contains(e.EventNotificationId) && e.ProcessGuid == processGuid)
-                                .Select(m => new { id = m.Id, message = m.Message});
+                                .Select(m => new { id = m.Id, message = m.Message });
 
                             foreach (var eventRec in sharedEventsToProcess)
                             {
-                                //Convert the json back into EventNotificationData
-                                EventNotificationData eventData = JsonConvert.DeserializeObject<EventNotificationData>(eventRec.message);
+                                var eventData = new EventNotificationData(JObject.Parse(eventRec.message));
 
                                 eventNotificationDataList.Add(eventRec.id, eventData);
                             }
@@ -90,8 +91,7 @@ namespace CampusLogicEvents.Web.Models
                             {
                                 foreach (var eventRec in individualEventsToProcess.Where(s => s.EventNotificationId == eventNotificationId).Select(m => new { id = m.Id, message = m.Message }))
                                 {
-                                    //Convert the json back into EventNotificationData
-                                    EventNotificationData eventData = JsonConvert.DeserializeObject<EventNotificationData>(eventRec.message);
+                                    var eventData = new EventNotificationData(JObject.Parse(eventRec.message));
                                     eventNotificationDataList.Add(eventRec.id, eventData);
                                 }
 

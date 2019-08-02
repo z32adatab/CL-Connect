@@ -4,15 +4,15 @@
     angular.module('clConnectControllers')
     .controller('environmentcontroller', environmentcontroller);
 
-    environmentcontroller.$inject = ['$scope', 'setupservice', 'validationservice', 'configurations', 'pageValidations'];
+    environmentcontroller.$inject = ['$scope', 'setupservice', 'validationservice', 'eventpropertyservice', 'configurations', 'pageValidations'];
 
-    function environmentcontroller($scope, setupservice, validationservice, configurations, pageValidations) {
+    function environmentcontroller($scope, setupservice, validationservice, eventpropertyservice, configurations, pageValidations) {
         $scope.service = setupservice;
         $scope.validationService = validationservice;
         $scope.setDocumentSettings = setDocumentSettings;
         $scope.environmentDropDownChangeEvent = environmentDropDownChangeEvent;
         $scope.addRemovePageFromValidation = addRemovePageFromValidation;
-
+        
         if (!$scope.service.configurationModel) {
             $scope.service.configurationModel = configurations;
             //temp workaround for deserialization issue              
@@ -29,6 +29,17 @@
         if (!$scope.validationService.pageValidations) {
             $scope.validationService.pageValidations = pageValidations;
         }
+
+        // update event properties each time the setup wizard loads 
+        // (starts on environment page)
+        eventpropertyservice.updateEventProperties.save({},
+            function() {
+                eventpropertyservice.getEventPropertyDisplayNames.query({},
+                    function(data) {
+                        setupservice.configurationModel.campusLogicSection
+                            .eventPropertyValueAvailableProperties = data;
+                    });
+            });
 
         function setDocumentSettings() {
             if (!$scope.service.configurationModel.campusLogicSection.eventNotifications.eventNotificationsEnabled) {

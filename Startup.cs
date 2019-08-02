@@ -97,8 +97,8 @@ namespace CampusLogicEvents.Web
 
                 // Get the current STS and the expected STS
                 var currentSts = ConfigurationManager.AppSettings["StsUrl"];
-                var expectedSts = string.Equals("sandbox", environment, StringComparison.InvariantCultureIgnoreCase)
-                    ? ApiUrlConstants.STSURL_SANDBOX : ApiUrlConstants.STSURL_PRODUCTION;
+                var expectedSts = string.Equals(EnvironmentConstants.SANDBOX, environment, StringComparison.InvariantCultureIgnoreCase)
+                    ? ApiUrlConstants.STS_URL_SANDBOX : ApiUrlConstants.STS_URL_PRODUCTION;
                 if (!string.Equals(expectedSts, currentSts, StringComparison.InvariantCultureIgnoreCase))
                 {
                     // STS update needed
@@ -131,6 +131,8 @@ namespace CampusLogicEvents.Web
         {
             //Does the EventNotification table exist? If not, create it.
             VerifyEventNotificationTableExists();
+            //Does the EventProperty table exist? If not, create it.
+            VerifyEventPropertyTableExists();
 
             bool? filestoreEnabled = campusLogicSection.FileStoreSettings.FileStoreEnabled;
 
@@ -190,7 +192,7 @@ namespace CampusLogicEvents.Web
             }
             if (smtpSection.DeliveryMethod == SmtpDeliveryMethod.SpecifiedPickupDirectory && string.IsNullOrEmpty(smtpSection.SpecifiedPickupDirectory.PickupDirectoryLocation))
             {
-                logger.Error("Speicified Pickup Directory was indicated as the delivery method for SMTP but no pickup directory location was specified ");
+                logger.Error("Specified Pickup Directory was indicated as the delivery method for SMTP but no pickup directory location was specified ");
             }
         }
 
@@ -726,6 +728,7 @@ namespace CampusLogicEvents.Web
             return str.All(c => c >= '0' && c <= '9');
         }
 
+        /*
         /// <summary>
         /// Check if file path follows format of :
         /// Begin with x:\ or \\
@@ -733,10 +736,11 @@ namespace CampusLogicEvents.Web
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        //private bool IsValidFilePathFormat(string path)
-        //{
-        //    return Regex.IsMatch(path, @"^(?:[a-zA-Z]\:|\\\\[\w\.]+\\[\w.$]+)\\(?:[\w]+\\)*\w([\w.])+$");
-        //}
+        private bool IsValidFilePathFormat(string path)
+        {
+            return Regex.IsMatch(path, @"^(?:[a-zA-Z]\:|\\\\[\w\.]+\\[\w.$]+)\\(?:[\w]+\\)*\w([\w.])+$");
+        }
+        */
 
         /// <summary>
         /// Validating an email address via regex
@@ -776,7 +780,6 @@ namespace CampusLogicEvents.Web
         /// <summary>
         /// Verifies that the EventNotification table exists in LocalDB and if it doesn't, creates it.
         /// </summary>
-        /// <param name="dbContext"></param>
         private static void VerifyEventNotificationTableExists()
         {
             using (var dbContext = new CampusLogicContext())
@@ -871,6 +874,32 @@ namespace CampusLogicEvents.Web
                 catch (Exception ex)
                 {
                     logger.Error($"There was an issue with validating and/or creating the PowerFaidsRecord table in LocalDB: {ex}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the EventProperty table exists in LocalDB and if it doesn't, creates it.
+        /// </summary>
+        private static void VerifyEventPropertyTableExists()
+        {
+            using (var dbContext = new CampusLogicContext())
+            {
+                try
+                {
+                    dbContext.Database.ExecuteSqlCommand(
+                        "IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[EventProperty]'))" +
+                        "BEGIN CREATE TABLE[dbo].[EventProperty]" +
+                        "([Id] INT NOT NULL" +
+                        ",[Name] NVARCHAR(200) NOT NULL" +
+                        ",[DisplayName] NVARCHAR(200) NOT NULL" +
+                        ",[DisplayFormula] NVARCHAR(2000) NOT NULL" +
+                        ",CONSTRAINT [PK_EventProperty] PRIMARY KEY ([Id])" +
+                        ",CONSTRAINT [AK_DisplayName] UNIQUE([DisplayName])) END");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"There was an issue with validating and/or creating the EventProperty table in LocalDB: {ex}");
                 }
             }
         }

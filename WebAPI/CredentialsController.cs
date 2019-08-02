@@ -14,12 +14,6 @@ namespace CampusLogicEvents.Web.WebAPI
 
         private static readonly ILog logger = LogManager.GetLogger("AdoNetAppender");
 
-        #region constants 
-        private const string SANDBOX = "sandbox";
-        private const string PRODUCTION = "production";
-        
-        #endregion constants
-
         public CredentialsController()
         {
         }
@@ -34,34 +28,37 @@ namespace CampusLogicEvents.Web.WebAPI
 
                 switch (environment)
                 {
-                    case SANDBOX:
+                    case EnvironmentConstants.SANDBOX:
                         {
-                            apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.SV_API_URL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.PM_API_URL_SANDBOX);
                             if (awardLetterUploadEnabled)
                             {
-                                apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
+                                apiURLs.Add(ApiUrlConstants.AL_API_URL_SANDBOX);
                             }
-                            stsURL = ApiUrlConstants.STSURL_SANDBOX;
+                            stsURL = ApiUrlConstants.STS_URL_SANDBOX;
                             break;
                         }
-                    case PRODUCTION:
+                    case EnvironmentConstants.PRODUCTION:
                         {
-                            apiURLs.Add(ApiUrlConstants.SV_APIURL_PRODUCTION);
+                            apiURLs.Add(ApiUrlConstants.SV_API_URL_PRODUCTION);
+                            apiURLs.Add(ApiUrlConstants.PM_API_URL_PRODUCTION);
                             if (awardLetterUploadEnabled)
                             {
-                                apiURLs.Add(ApiUrlConstants.AL_APIURL_PRODUCTION);
+                                apiURLs.Add(ApiUrlConstants.AL_API_URL_PRODUCTION);
                             }
-                            stsURL = ApiUrlConstants.STSURL_PRODUCTION;
+                            stsURL = ApiUrlConstants.STS_URL_PRODUCTION;
                             break;
                         }
                     default:
                         {
-                            apiURLs.Add(ApiUrlConstants.SV_APIURL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.SV_API_URL_SANDBOX);
+                            apiURLs.Add(ApiUrlConstants.PM_API_URL_SANDBOX);
                             if (awardLetterUploadEnabled)
                             {
-                                apiURLs.Add(ApiUrlConstants.AL_APIURL_SANDBOX);
+                                apiURLs.Add(ApiUrlConstants.AL_API_URL_SANDBOX);
                             }
-                            stsURL = ApiUrlConstants.STSURL_SANDBOX;
+                            stsURL = ApiUrlConstants.STS_URL_SANDBOX;
                             break;
                         }
                 }
