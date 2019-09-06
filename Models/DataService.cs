@@ -195,15 +195,14 @@ namespace CampusLogicEvents.Web.Models
                         //Check if this event notification is a Scholarship Universe Event (700's). If so, we need to call back to SU to get the metadata
                         if (eventNotificationId >= 700 && eventNotificationId <= 799)
                         {
-                            if (eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].IsNullOrEmpty() || eventData.PropertyValues[EventPropertyConstants.SuClientTermId].IsNullOrEmpty())
+                            if (!eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].IsNullOrEmpty() && !eventData.PropertyValues[EventPropertyConstants.SuClientTermId].IsNullOrEmpty())
                             {
-                                throw new Exception("SuScholarshipAwardId and SuClientTermId are needed to get the award post item event data");
+                                var manager = new ScholarshipManager();
+                                AwardPostItemData awardPostItemData = manager.GetAwardPostItemData(
+                                    eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].Value<int>(),
+                                    eventData.PropertyValues[EventPropertyConstants.SuClientTermId].Value<int>());
+                                eventData.AwardPostItemData = awardPostItemData;
                             }
-                            var manager = new ScholarshipManager();
-                            AwardPostItemData awardPostItemData = manager.GetAwardPostItemData(
-                                eventData.PropertyValues[EventPropertyConstants.SuScholarshipAwardId].Value<int>(),
-                                eventData.PropertyValues[EventPropertyConstants.SuClientTermId].Value<int>());
-                            eventData.AwardPostItemData = awardPostItemData;
                         }
 
                         // populate PropertyValues with all the values that have been gathered
@@ -420,8 +419,8 @@ namespace CampusLogicEvents.Web.Models
                 string odbcTypeMatch = odbcTypes.First(t => t.Equals(parameterElement.DataType, StringComparison.InvariantCultureIgnoreCase));
                 OdbcType odbcType = (OdbcType)Enum.Parse(typeof(OdbcType), odbcTypeMatch);
 
-                // Get property from the data using a string.
-                object value = data.PropertyValues[parameterElement.Source].Value<string>();
+                // Get property from the data using the property DisplayName (source)
+                object value = data.GetValueByDisplayName(parameterElement.Source);
 
                 // Build return object.
                 var parameter = new OdbcParameter
