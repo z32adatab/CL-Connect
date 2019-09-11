@@ -419,8 +419,8 @@ namespace CampusLogicEvents.Web.Models
                 string odbcTypeMatch = odbcTypes.First(t => t.Equals(parameterElement.DataType, StringComparison.InvariantCultureIgnoreCase));
                 OdbcType odbcType = (OdbcType)Enum.Parse(typeof(OdbcType), odbcTypeMatch);
 
-                // Get property value from the data
-                object value = data.GetValueForOdbcType(parameterElement.Source, odbcType);
+                // Get property from the data using the property DisplayName (source)
+                object value = data.GetValueByDisplayName(parameterElement.Source);
 
                 // Build return object.
                 var parameter = new OdbcParameter
