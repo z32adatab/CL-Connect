@@ -502,7 +502,7 @@ namespace CampusLogicEvents.Web.Models
             }
 
             //Get and Store the Documents
-            manager.GetAwardLetterPdfFile(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>(), eventData);
+            manager.GetAwardLetterPdfFile(Guid.Parse(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<string>()), eventData);
         }
 
         /// <summary>

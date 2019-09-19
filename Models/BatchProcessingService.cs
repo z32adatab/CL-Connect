@@ -77,19 +77,19 @@ namespace CampusLogicEvents.Web.Models
                                     }
                                     else if (record.RetryCount > RETRY_MAX)
                                     {
-                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id: {record.Id}, AL-record-Id: {eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>()}. Please contact your CampusLogic contact for next steps.");
-                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {record.Id}, AL-record-Id: {eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>()}.");
+                                        SendErrorNotification("Batch AwardLetter process", $"This record has reached it's maximum retry attempts, record Id: {record.Id}, AL-record-Id: {Guid.Parse(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<string>())}. Please contact your CampusLogic contact for next steps.");
+                                        logger.Error($"Record for batch awardletter process has reached maximum retry attempts, with award letter record Id: {record.Id}, AL-record-Id: {Guid.Parse(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<string>())}.");
                                         dbContext.Database.ExecuteSqlCommand($"DELETE FROM [dbo].[BatchProcessRecord] WHERE [ProcessGuid] = '{processGuid}' and [Id] = {record.Id}");
                                     }
                                     else if (record.RetryCount == RETRY_MAX && retryTimeHasPassed)
                                     {
                                         processSingularly = true;
-                                        recordIds.Add(record.Id, eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>());
+                                        recordIds.Add(record.Id, Guid.Parse(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<string>()));
                                     }
                                     else if (retryTimeHasPassed)
                                     {
                                         processSingularly = false;
-                                        recordIds.Add(record.Id, eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<Guid>());
+                                        recordIds.Add(record.Id, Guid.Parse(eventData.PropertyValues[EventPropertyConstants.AlRecordId].Value<string>()));
                                     }
 
                                     if (recordIds.Count == size || processSingularly)
