@@ -447,7 +447,7 @@ namespace CampusLogicEvents.Web.Models
 
             if (eventData.PropertyValues[EventPropertyConstants.SvDocumentId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<string>());
                 return;
             }
 
@@ -494,7 +494,7 @@ namespace CampusLogicEvents.Web.Models
 
             if (eventData.PropertyValues[EventPropertyConstants.AlRecordId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<string>());
                 return;
             }
 
