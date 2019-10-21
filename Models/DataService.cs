@@ -164,7 +164,7 @@ namespace CampusLogicEvents.Web.Models
                                 }
                                 var manager = new AppealManager();
                                 manager.GetAuthorizationForSV();
-                                eventData.PropertyValues[EventPropertyConstants.TransactionOutcomeId] = (int)manager.GetAppealMetaData(eventData.PropertyValues[EventPropertyConstants.SvTransactionId].Value<int>()).Result;
+                                eventData.PropertyValues[EventPropertyConstants.TransactionOutcomeId] = manager.GetAppealMetaData(eventData.PropertyValues[EventPropertyConstants.SvTransactionId].Value<int>()).Result.ToString();
                             }
                         }
 
