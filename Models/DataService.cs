@@ -44,9 +44,9 @@ namespace CampusLogicEvents.Web.Models
                         //SV-1698 Allowing requeue of events already processed
                         //First verify we didn't already get and process this event using the unique identifier within the configured purge day window before we clear old events
                         var id = notificationEvent["Id"].ToString();
-                        var eventExists = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == id);
+                        var existingEvent = dbContext.ReceivedEvents.FirstOrDefault(x => x.Id == id);
 
-                        if (eventExists == null)
+                        if (existingEvent == null)
                         {
                             dbContext.ReceivedEvents.Add(new ReceivedEvent()
                             {
@@ -54,19 +54,16 @@ namespace CampusLogicEvents.Web.Models
                                 EventData = notificationEvent.ToString(),
                                 ReceivedDateTime = DateTime.UtcNow
                             });
-                            dbContext.SaveChanges();
-
-                            BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
                         }
                         else
                         {
-                            var eventToUpdate = dbContext.ReceivedEvents.First();
-                            eventToUpdate.EventData = notificationEvent.ToString();
-                            eventToUpdate.ReceivedDateTime = DateTime.UtcNow;
-                            dbContext.SaveChanges();
-
-                            BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
+                            existingEvent.EventData = notificationEvent.ToString();
+                            existingEvent.ReceivedDateTime = DateTime.UtcNow;
                         }
+
+                        dbContext.SaveChanges();
+
+                        BackgroundJob.Enqueue(() => ProcessPostedEvent(notificationEvent));
                     }
                 }
             }
@@ -167,7 +164,7 @@ namespace CampusLogicEvents.Web.Models
                                 }
                                 var manager = new AppealManager();
                                 manager.GetAuthorizationForSV();
-                                eventData.PropertyValues[EventPropertyConstants.TransactionOutcomeId] = (int)manager.GetAppealMetaData(eventData.PropertyValues[EventPropertyConstants.SvTransactionId].Value<int>()).Result;
+                                eventData.PropertyValues[EventPropertyConstants.TransactionOutcomeId] = manager.GetAppealMetaData(eventData.PropertyValues[EventPropertyConstants.SvTransactionId].Value<int>()).Result.ToString();
                             }
                         }
 
@@ -450,7 +447,7 @@ namespace CampusLogicEvents.Web.Models
 
             if (eventData.PropertyValues[EventPropertyConstants.SvDocumentId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Document Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<string>());
                 return;
             }
 
@@ -497,7 +494,7 @@ namespace CampusLogicEvents.Web.Models
 
             if (eventData.PropertyValues[EventPropertyConstants.AlRecordId].IsNullOrEmpty())
             {
-                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<int>());
+                logger.ErrorFormat("DataService ProcessPostedEvent Missing Record Id for Event Id: {0}", eventData.PropertyValues[EventPropertyConstants.Id].Value<string>());
                 return;
             }
 
