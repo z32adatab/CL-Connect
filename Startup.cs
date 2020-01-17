@@ -692,7 +692,7 @@ namespace CampusLogicEvents.Web
                         var minutes = batchProcess.BatchExecutionMinutes;
 
                         RecurringJob.AddOrUpdate(string.Format("{0}.{1}", type, name), () => BatchProcessingService.RunBatchProcess(type, name, size),
-                        "*/" + minutes + " " + "*" + " " + "*" + " " + "*" + " " + "*");
+                        GetCronExpressionByMinutes(minutes));
                     }
                 }
             }
