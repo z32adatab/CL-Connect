@@ -22,7 +22,7 @@ namespace CampusLogicEvents.Web.Models
         private static readonly CampusLogicSection campusLogicConfigSection = (CampusLogicSection)ConfigurationManager.GetSection(ConfigConstants.CampusLogicConfigurationSectionName);
 
         [AutomaticRetry(Attempts = 0)]
-        public static async void RunBatchProcess(string type, string name, int size)
+        public static async Task RunBatchProcess(string type, string name, int size)
         {
 
             logger.Info("enter batch processing");
