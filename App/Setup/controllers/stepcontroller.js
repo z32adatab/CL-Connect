@@ -66,8 +66,10 @@
                 $scope.errorCopying = false;
                 $scope.success = false;
                 $scope.fail = false;
+
+                // Convert from array to concatenated string
                 $scope.concatenateDaysToRun();
-                //Resetting isir upload days to run and award letter days to run from array to concatenated string
+                
                 $scope.validationService.validateAllConfigurations.save($scope.service.configurationModel, function () {
                     $scope.service.archiveWebConfig.save(function () {
                         $scope.service.configurations.save($scope.service.configurationModel, function() {
@@ -97,8 +99,10 @@
         }
 
         function concatenateDaysToRun() {
-            $scope.service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun =  $scope.service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun.join(",");
+            $scope.service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun = $scope.service.configurationModel.campusLogicSection.isirUploadSettings.isirUploadDaysToRun.join(",");
             $scope.service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun = $scope.service.configurationModel.campusLogicSection.awardLetterUploadSettings.awardLetterUploadDaysToRun.join(",");
+            $scope.service.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadDaysToRun = $scope.service.configurationModel.campusLogicSection.fileMappingUploadSettings.fileMappingUploadDaysToRun.join(",");
+            $scope.service.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadDaysToRun = $scope.service.configurationModel.campusLogicSection.dataFileUploadSettings.dataFileUploadDaysToRun.join(",");
             $scope.service.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun = $scope.service.configurationModel.campusLogicSection.isirCorrectionsSettings.daysToRun.join(",");
         }
 
