@@ -394,6 +394,7 @@ namespace CampusLogicEvents.Web.Models
                 // Final output should look like this: {CALL sproc_name (?, ?, ?)}
                 string command = $"{{CALL {storedProcedureSettings.Name}{placeholders}}}";
 
+                logger.Info(command);
                 ClientDatabaseManager.ExecuteDatabaseStoredProcedure(command, parameters);
             }
             else
