@@ -381,7 +381,7 @@ namespace CampusLogicEvents.Web.Models
                     storedProcedureSettings.GetParameters().Select(p => ParseParameter(p, eventData)).ToList();
                 
                 //Adding logging in case client experiences weird argument error, we can better determine what we are trying to pass
-                logger.Info($"Parameters to be pass into database: { String.Join(", ", parameters.Select(x => x.ParameterName + ": " + x.Value.ToString() + " - DataType: " + Enum.GetName(typeof(OdbcType), x.OdbcType)))}");
+                //logger.Info($"Parameters to be pass into database: { String.Join(", ", parameters.Select(x => x.ParameterName + ": " + x.Value.ToString() + " - DataType: " + Enum.GetName(typeof(OdbcType), x.OdbcType)))}");
 
                 // For each parameter, need to add a placeholder "?" in the sql command.  
                 // This is just part of the ODBC syntax.
@@ -394,7 +394,7 @@ namespace CampusLogicEvents.Web.Models
                 // Final output should look like this: {CALL sproc_name (?, ?, ?)}
                 string command = $"{{CALL {storedProcedureSettings.Name}{placeholders}}}";
 
-                logger.Info(command);
+                //logger.Info(command);
                 ClientDatabaseManager.ExecuteDatabaseStoredProcedure(command, parameters);
             }
             else
